@@ -22,36 +22,49 @@ See [PRIVACY.md](PRIVACY.md) for full details.
 
 ## Installation
 
-### From Firefox Add-ons
+### From Firefox Add-ons (Recommended)
 
-Visit the [Firefox Add-ons page](https://addons.mozilla.org) and search for "Prompt Pins for ChatGPT" to install with one click.
+1. Visit the [Firefox Add-ons page](https://addons.mozilla.org/firefox/addon/prompt-pins-for-chatgpt/)
+2. Click "Add to Firefox"
+3. Click "Add" when prompted to confirm
+4. Visit [ChatGPT](https://chatgpt.com) and start using Prompt Pins!
 
 ### From Source (for developers)
 
-1. Download or clone this repository
-2. Open Firefox and navigate to `about:debugging`
-3. Click "This Firefox" in the left sidebar
-4. Click "Load Temporary Add-on"
-5. Select the `manifest.json` file from the extension directory
+If you want to modify the code or contribute:
+
+1. Clone this repository:
+   ```bash
+   git clone https://github.com/BigLangerStyle/prompt-pins-chatgpt.git
+   cd prompt-pins-chatgpt
+   ```
+
+2. Load in Firefox:
+   - Open Firefox and navigate to `about:debugging`
+   - Click "This Firefox" in the left sidebar
+   - Click "Load Temporary Add-on"
+   - Select the `manifest.json` file from the extension directory
 
 ## Usage
 
-1. **Create a Pin**: 
-   - Highlight any text in a ChatGPT conversation
-   - Right-click and select "Pin prompt"
-   - Optionally add a comment
-   - Click "Save Pin"
+### Creating a Pin
 
-2. **Use a Pin**:
-   - Click "Next Pin" to use the first pin in your list
-   - Or click "Use" on any specific pin
-   - The prompt is automatically submitted to ChatGPT
-   - The pin is removed after use
+1. Highlight any text in a ChatGPT conversation
+2. Right-click and select **"Pin prompt"**
+3. Optionally add a comment for context
+4. Click **"Save Pin"** (or press Enter)
 
-3. **Manage Pins**:
-   - Drag pins to reorder them
-   - Click the × button to delete a pin
-   - Click the − button to collapse the sidebar
+### Using Pins
+
+- **Next Pin Button**: Click "Next Pin →" to use the first pin in your queue
+- **Individual Use**: Click "Use" on any specific pin
+- Pins are automatically submitted to ChatGPT and removed after use
+
+### Managing Pins
+
+- **Reorder**: Drag and drop pins to organize them
+- **Delete**: Click the × button to remove a pin
+- **Collapse**: Click the − button to hide the sidebar
 
 ## Permissions Explained
 
@@ -61,34 +74,35 @@ Visit the [Firefox Add-ons page](https://addons.mozilla.org) and search for "Pro
 
 ## Technical Details
 
-- No external dependencies
-- No remote code execution
-- All code is static and included in the extension
-- Uses browser's native APIs only
-- Content script only runs on ChatGPT domains
+- **Language**: Vanilla JavaScript (no frameworks)
+- **Size**: ~20KB total
+- **Dependencies**: None (uses browser native APIs only)
+- **Content script**: Only runs on ChatGPT domains
+- **Security**: No external network requests, uses `textContent` (not `innerHTML`)
 
 ## Screenshots
 
-[Include 2-3 screenshots showing:]
-1. Creating a pin with the comment dialog
-2. The sidebar with multiple pins
-3. The "Use" and "Next Pin" functionality
+[Screenshots will be added after Mozilla approval]
 
 ## Contributing
 
-This is currently a personal project, but suggestions and bug reports are welcome! Contact via the Firefox Add-ons page.
+Suggestions and bug reports are welcome!
+
+- **Report a Bug**: [Open an issue](https://github.com/BigLangerStyle/prompt-pins-chatgpt/issues)
+- **Suggest a Feature**: [Open an issue](https://github.com/BigLangerStyle/prompt-pins-chatgpt/issues)
 
 ## License
 
-MIT License - see LICENSE file for details
+MIT License - see [LICENSE](LICENSE) file for details
 
 Copyright (c) 2025 Prompt Pins Contributors
 
 ## Version History
 
-### 1.0.0 (2025-01-07)
+### 1.0.0 (January 7, 2025)
 - Initial release
 - Pin creation with optional comments
-- Drag to reorder
+- Drag to reorder functionality
 - Auto-submit functionality
 - Dark theme matching ChatGPT
+- Local storage persistence
