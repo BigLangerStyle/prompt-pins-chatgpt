@@ -3,6 +3,9 @@
 *.zip
 web-ext-artifacts/
 
+# Internal planning documents
+PROJECT_SUMMARY.md
+
 # Operating System files
 .DS_Store
 .DS_Store?
