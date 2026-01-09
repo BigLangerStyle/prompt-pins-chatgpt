@@ -13,12 +13,33 @@ function createSidebar() {
   
   const headerTitle = document.createElement('div');
   headerTitle.className = 'pins-header-title';
-  headerTitle.innerHTML = `
-    <svg class="pin-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M12 2v20M16 6l-4 4-4-4M16 18l-4-4-4 4"/>
-    </svg>
-    <h3>Prompt Pins</h3>
-  `;
+  
+  const svgIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svgIcon.setAttribute('class', 'pin-icon');
+  svgIcon.setAttribute('width', '20');
+  svgIcon.setAttribute('height', '20');
+  svgIcon.setAttribute('viewBox', '0 0 24 24');
+  svgIcon.setAttribute('fill', 'none');
+  svgIcon.setAttribute('stroke', 'currentColor');
+  svgIcon.setAttribute('stroke-width', '2');
+  
+  const path1 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  path1.setAttribute('d', 'M12 2v20');
+  svgIcon.appendChild(path1);
+  
+  const path2 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  path2.setAttribute('d', 'M16 6l-4 4-4-4');
+  svgIcon.appendChild(path2);
+  
+  const path3 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  path3.setAttribute('d', 'M16 18l-4-4-4 4');
+  svgIcon.appendChild(path3);
+  
+  const h3 = document.createElement('h3');
+  h3.textContent = 'Prompt Pins';
+  
+  headerTitle.appendChild(svgIcon);
+  headerTitle.appendChild(h3);
   
   const headerButtons = document.createElement('div');
   headerButtons.className = 'header-buttons';
@@ -68,6 +89,11 @@ function toggleSidebar() {
   const sidebar = document.getElementById('prompt-pins-sidebar');
   const toggle = document.getElementById('toggle-pins');
   
+  if (!sidebar || !toggle) {
+    console.error("Sidebar or toggle button not found");
+    return;
+  }
+  
   if (sidebarOpen) {
     sidebar.classList.remove('collapsed');
     toggle.textContent = '−';
@@ -79,14 +105,24 @@ function toggleSidebar() {
 
 // Load pins from storage
 async function loadPins() {
-  const result = await browser.storage.local.get('pins');
-  pins = result.pins || [];
-  renderPins();
+  try {
+    const result = await browser.storage.local.get('pins');
+    pins = result.pins || [];
+    renderPins();
+  } catch (error) {
+    console.error("Failed to load pins:", error);
+    pins = [];
+    renderPins();
+  }
 }
 
 // Save pins to storage
 async function savePins() {
-  await browser.storage.local.set({ pins });
+  try {
+    await browser.storage.local.set({ pins });
+  } catch (error) {
+    console.error("Failed to save pins:", error);
+  }
 }
 
 // Render the pins list
@@ -102,7 +138,9 @@ function renderPins() {
   }
   
   if (pins.length === 0) {
-    list.innerHTML = '';
+    while (list.firstChild) {
+      list.removeChild(list.firstChild);
+    }
     const emptyDiv = document.createElement('div');
     emptyDiv.className = 'empty-state';
     emptyDiv.textContent = 'No pins yet. Highlight text and right-click to create one.';
@@ -111,7 +149,9 @@ function renderPins() {
   }
   
   // Clear list
-  list.innerHTML = '';
+  while (list.firstChild) {
+    list.removeChild(list.firstChild);
+  }
   
   // Create pin items
   pins.forEach((pin, index) => {
@@ -191,7 +231,7 @@ function handleDragStart(e) {
   draggedIndex = parseInt(e.currentTarget.dataset.index);
   e.currentTarget.classList.add('dragging');
   e.dataTransfer.effectAllowed = 'move';
-  e.dataTransfer.setData('text/html', e.currentTarget.innerHTML);
+  // Note: We use index-based reordering, so we don't need to transfer HTML
 }
 
 function handleDragEnter(e) {
@@ -253,6 +293,11 @@ function createPin(text) {
 
 // Show comment input field
 function showCommentInput(selectedText) {
+  if (!selectedText || typeof selectedText !== 'string' || selectedText.trim().length === 0) {
+    console.error("Invalid selectedText:", selectedText);
+    return;
+  }
+  
   // Remove any existing comment input
   const existing = document.getElementById('pin-comment-input');
   if (existing) existing.remove();
@@ -422,7 +467,16 @@ function showCommentInput(selectedText) {
 
 // Use a pin (fill the ChatGPT input)
 function usePin(index, shouldDelete = false) {
+  if (index < 0 || index >= pins.length) {
+    console.error("Invalid pin index:", index);
+    return;
+  }
+  
   const pin = pins[index];
+  if (!pin) {
+    console.error("Pin not found at index:", index);
+    return;
+  }
   
   // ChatGPT uses a contenteditable div, not a textarea
   let inputElement = document.querySelector('#prompt-textarea');
@@ -434,7 +488,9 @@ function usePin(index, shouldDelete = false) {
   if (inputElement) {
     
     // Clear the input
-    inputElement.innerHTML = '';
+    while (inputElement.firstChild) {
+      inputElement.removeChild(inputElement.firstChild);
+    }
     
     if (pin.comment) {
       // Create paragraphs with an empty one in between
@@ -444,7 +500,7 @@ function usePin(index, shouldDelete = false) {
       
       // Add empty paragraph for spacing
       const emptyP = document.createElement('p');
-      emptyP.innerHTML = '<br>';
+      emptyP.appendChild(document.createElement('br'));
       inputElement.appendChild(emptyP);
       
       const commentP = document.createElement('p');
@@ -492,6 +548,10 @@ function usePin(index, shouldDelete = false) {
 
 // Delete a pin
 function deletePin(index) {
+  if (index < 0 || index >= pins.length) {
+    console.error("Invalid pin index for deletion:", index);
+    return;
+  }
   pins.splice(index, 1);
   savePins();
   renderPins();
@@ -500,9 +560,14 @@ function deletePin(index) {
 // Listen for messages from background script
 browser.runtime.onMessage.addListener((message) => {
   if (message.action === 'createPin') {
+    if (!message.selectedText || typeof message.selectedText !== 'string') {
+      console.error("Invalid selectedText in message:", message);
+      return Promise.resolve({success: false, error: "Invalid selectedText"});
+    }
     createPin(message.selectedText);
     return Promise.resolve({success: true});
   }
+  return Promise.resolve({success: false, error: "Unknown action"});
 });
 
 // Initialize when page loads

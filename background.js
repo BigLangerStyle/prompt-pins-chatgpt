@@ -14,6 +14,9 @@ browser.contextMenus.onClicked.addListener((info, tab) => {
     browser.tabs.sendMessage(tab.id, {
       action: "createPin",
       selectedText: info.selectionText
+    }).catch((error) => {
+      // Content script may not be loaded or tab may have navigated away
+      console.error("Failed to send message to content script:", error);
     });
   }
 });
