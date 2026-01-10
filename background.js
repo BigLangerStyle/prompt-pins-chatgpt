@@ -20,3 +20,16 @@ browser.contextMenus.onClicked.addListener((info, tab) => {
     });
   }
 });
+
+// Handle keyboard shortcuts
+browser.commands.onCommand.addListener((command) => {
+  browser.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
+    if (tabs[0]) {
+      browser.tabs.sendMessage(tabs[0].id, {
+        action: command
+      }).catch((error) => {
+        console.error("Failed to send command to content script:", error);
+      });
+    }
+  });
+});

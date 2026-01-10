@@ -156,7 +156,7 @@ function renderPins() {
     if (isQueued) {
       const queuedBadge = document.createElement('div');
       queuedBadge.className = 'queued-badge';
-      queuedBadge.textContent = '⏳ Queued - waiting for ChatGPT to finish...';
+      queuedBadge.textContent = 'â³ Queued - waiting for ChatGPT to finish...';
       pinItem.appendChild(queuedBadge);
     }
 
@@ -545,9 +545,9 @@ function usePin(index, shouldDelete = false) {
       commentP.textContent = pin.comment;
       inputElement.appendChild(commentP);
     } else {
-      // Just the text
+      // Just the text with "Expand on:" prefix
       const p = document.createElement('p');
-      p.textContent = pin.text;
+      p.textContent = `Expand on: "${pin.text}"`;
       inputElement.appendChild(p);
     }
 
@@ -613,7 +613,7 @@ function queuePin(index) {
       inputElement.appendChild(commentP);
     } else {
       const p = document.createElement('p');
-      p.textContent = pin.text;
+      p.textContent = `Expand on: "${pin.text}"`;
       inputElement.appendChild(p);
     }
 
@@ -794,6 +794,64 @@ function clearAllPins() {
   renderPins();
 }
 
+// Helper function to get current text selection
+function getSelectedText() {
+  const selection = window.getSelection();
+  return selection ? selection.toString().trim() : '';
+}
+
+// Send selected text immediately (bypass pin creation)
+function sendImmediately() {
+  const selectedText = getSelectedText();
+  
+  if (!selectedText) {
+    return; // No text selected
+  }
+  
+  // Find ChatGPT input
+  let inputElement = document.querySelector('#prompt-textarea');
+  
+  if (!inputElement) {
+    inputElement = document.querySelector('[contenteditable="true"]');
+  }
+  
+  if (inputElement) {
+    // Clear the input
+    inputElement.innerHTML = '';
+    
+    // Add the text with "Expand on:" prefix
+    const p = document.createElement('p');
+    p.textContent = `Expand on: "${selectedText}"`;
+    inputElement.appendChild(p);
+    
+    // Trigger input events
+    inputElement.dispatchEvent(new Event('input', { bubbles: true }));
+    inputElement.dispatchEvent(new Event('change', { bubbles: true }));
+    
+    // Focus the element
+    inputElement.focus();
+    
+    // Move cursor to end
+    const range = document.createRange();
+    const sel = window.getSelection();
+    range.selectNodeContents(inputElement);
+    range.collapse(false);
+    sel.removeAllRanges();
+    sel.addRange(range);
+    
+    // Auto-submit after brief delay
+    setTimeout(() => {
+      const sendButton = document.querySelector('button[data-testid="send-button"]') 
+        || document.querySelector('button[aria-label="Send prompt"]')
+        || document.querySelector('button svg[class*="icon-send"]')?.closest('button');
+      
+      if (sendButton && !sendButton.disabled) {
+        sendButton.click();
+      }
+    }, 100);
+  }
+}
+
 // Delete a pin
 function deletePin(index) {
   pins.splice(index, 1);
@@ -804,7 +862,25 @@ function deletePin(index) {
 // Listen for messages from background script
 browser.runtime.onMessage.addListener((message) => {
   if (message.action === 'createPin') {
+    // Context menu: create pin from selected text
     createPin(message.selectedText);
+    return Promise.resolve({success: true});
+  } else if (message.action === 'create-pin') {
+    // Keyboard shortcut: Ctrl+Alt+P - create pin from current selection
+    const selectedText = getSelectedText();
+    if (selectedText) {
+      createPin(selectedText);
+    }
+    return Promise.resolve({success: true});
+  } else if (message.action === 'send-immediately') {
+    // Keyboard shortcut: Ctrl+Alt+S - send selected text immediately
+    sendImmediately();
+    return Promise.resolve({success: true});
+  } else if (message.action === 'use-next-pin') {
+    // Keyboard shortcut: Ctrl+Alt+N - use next pin
+    if (pins.length > 0) {
+      usePin(0, true);
+    }
     return Promise.resolve({success: true});
   }
 });
