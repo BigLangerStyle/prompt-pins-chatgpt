@@ -8,6 +8,7 @@ A Firefox extension that lets you save questions and prompts for later use witho
 - **Smart Queue System**: Automatically queues pins if ChatGPT is busy, submits when ready
 - **Add Context**: Optionally add a note or comment to each pin
 - **Quick Access**: Use the "Next Pin" button to automatically load and submit your next question
+- **Smart Queue System**: Pins automatically queue when ChatGPT is generating, then auto-submit when ready
 - **Drag to Reorder**: Organize your pins by dragging them into your preferred order
 - **Clear All Pins**: Remove all pins at once with a confirmation dialog to prevent accidents
 - **Persistent Storage**: Pins are saved locally and persist across browser sessions
@@ -131,7 +132,7 @@ Copyright (c) 2025 Prompt Pins Contributors
 ## Version History
 
 ### 1.1.0 (In Development)
-- **NEW:** Smart Queue System - Automatically queues pins when ChatGPT is busy
+- Queue system for handling pins when ChatGPT is generating
 - Clear All Pins feature with confirmation dialog
 
 ### 1.0.0 (January 7, 2025)
