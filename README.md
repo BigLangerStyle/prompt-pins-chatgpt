@@ -82,7 +82,20 @@ If you want to modify the code or contribute:
 
 ## Screenshots
 
-[Screenshots will be added after Mozilla approval]
+### Creating a Pin
+Right-click on selected text and choose "Pin prompt" from the context menu:
+
+![Context Menu](screenshots/screenshot-context-menu.png)
+
+### Pin Creation Dialog
+Add optional notes or comments to your pin:
+
+![Create Pin Dialog](screenshots/screenshot-create-pin-dialog.png)
+
+### Managing Pins
+View and manage all your saved pins in the sidebar:
+
+![Sidebar with Pins](screenshots/screenshot-sidebar-pins.png)
 
 ## Contributing
 
