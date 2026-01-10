@@ -5,6 +5,7 @@ A Firefox extension that lets you save questions and prompts for later use witho
 ## Features
 
 - **Pin Any Text**: Highlight text in a ChatGPT conversation and right-click to pin it
+- **Smart Queue System**: Automatically queues pins if ChatGPT is busy, submits when ready
 - **Add Context**: Optionally add a note or comment to each pin
 - **Quick Access**: Use the "Next Pin" button to automatically load and submit your next question
 - **Smart Queue System**: Pins automatically queue when ChatGPT is generating, then auto-submit when ready
@@ -13,6 +14,19 @@ A Firefox extension that lets you save questions and prompts for later use witho
 - **Persistent Storage**: Pins are saved locally and persist across browser sessions
 - **Dark Theme**: Matches ChatGPT's interface with a clean, modern design
 - **Auto-Submit**: Automatically submits prompts when you click "Use" or "Next Pin"
+
+## Smart Queue System
+
+If you try to use a pin while ChatGPT is generating a response, the extension intelligently handles this:
+
+1. **Automatic Queuing**: The pin enters a queued state instead of failing
+2. **Visual Feedback**: Shows "⏳ Queued - waiting for ChatGPT to finish..." badge
+3. **Other Pins Disabled**: All other "Use" buttons become disabled while a pin is queued
+4. **Cancel Option**: Click "Cancel" on the queued pin to abort and clear the input
+5. **Auto-Submit**: Extension watches for ChatGPT to finish, then auto-submits the queued pin
+6. **Auto-Delete**: Queued pin is deleted after successful submission
+
+This ensures you never lose a pin due to timing issues and creates a smooth workflow!
 
 ## Privacy
 
@@ -60,6 +74,7 @@ If you want to modify the code or contribute:
 
 - **Next Pin Button**: Click "Next Pin ->" to use the first pin in your queue
 - **Individual Use**: Click "Use" on any specific pin
+- If ChatGPT is busy, the pin automatically queues and submits when ready
 - Pins are automatically submitted to ChatGPT and removed after use
 
 ### Managing Pins
@@ -68,6 +83,7 @@ If you want to modify the code or contribute:
 - **Delete**: Click the x button to remove a pin
 - **Clear All**: Click "Clear" button to remove all pins (with confirmation)
 - **Collapse**: Click the - button to hide the sidebar
+- **Cancel Queue**: If a pin is queued, click "Cancel" to abort
 
 ## Permissions Explained
 
@@ -78,7 +94,7 @@ If you want to modify the code or contribute:
 ## Technical Details
 
 - **Language**: Vanilla JavaScript (no frameworks)
-- **Size**: ~20KB total
+- **Size**: ~25KB total
 - **Dependencies**: None (uses browser native APIs only)
 - **Content script**: Only runs on ChatGPT domains
 - **Security**: No external network requests, uses `textContent` (not `innerHTML`)
