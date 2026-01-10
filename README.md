@@ -8,6 +8,7 @@ A Firefox extension that lets you save questions and prompts for later use witho
 - **Add Context**: Optionally add a note or comment to each pin
 - **Quick Access**: Use the "Next Pin" button to automatically load and submit your next question
 - **Drag to Reorder**: Organize your pins by dragging them into your preferred order
+- **Clear All Pins**: Remove all pins at once with a confirmation dialog to prevent accidents
 - **Persistent Storage**: Pins are saved locally and persist across browser sessions
 - **Dark Theme**: Matches ChatGPT's interface with a clean, modern design
 - **Auto-Submit**: Automatically submits prompts when you click "Use" or "Next Pin"
@@ -56,15 +57,16 @@ If you want to modify the code or contribute:
 
 ### Using Pins
 
-- **Next Pin Button**: Click "Next Pin →" to use the first pin in your queue
+- **Next Pin Button**: Click "Next Pin ->" to use the first pin in your queue
 - **Individual Use**: Click "Use" on any specific pin
 - Pins are automatically submitted to ChatGPT and removed after use
 
 ### Managing Pins
 
 - **Reorder**: Drag and drop pins to organize them
-- **Delete**: Click the × button to remove a pin
-- **Collapse**: Click the − button to hide the sidebar
+- **Delete**: Click the x button to remove a pin
+- **Clear All**: Click "Clear" button to remove all pins (with confirmation)
+- **Collapse**: Click the - button to hide the sidebar
 
 ## Permissions Explained
 
@@ -111,6 +113,9 @@ MIT License - see [LICENSE](LICENSE) file for details
 Copyright (c) 2025 Prompt Pins Contributors
 
 ## Version History
+
+### 1.1.0 (In Development)
+- Clear All Pins feature with confirmation dialog
 
 ### 1.0.0 (January 7, 2025)
 - Initial release
