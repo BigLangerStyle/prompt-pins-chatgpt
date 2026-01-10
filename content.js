@@ -13,42 +13,27 @@ function createSidebar() {
   
   const headerTitle = document.createElement('div');
   headerTitle.className = 'pins-header-title';
-  
-  const svgIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svgIcon.setAttribute('class', 'pin-icon');
-  svgIcon.setAttribute('width', '20');
-  svgIcon.setAttribute('height', '20');
-  svgIcon.setAttribute('viewBox', '0 0 24 24');
-  svgIcon.setAttribute('fill', 'none');
-  svgIcon.setAttribute('stroke', 'currentColor');
-  svgIcon.setAttribute('stroke-width', '2');
-  
-  const path1 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  path1.setAttribute('d', 'M12 2v20');
-  svgIcon.appendChild(path1);
-  
-  const path2 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  path2.setAttribute('d', 'M16 6l-4 4-4-4');
-  svgIcon.appendChild(path2);
-  
-  const path3 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  path3.setAttribute('d', 'M16 18l-4-4-4 4');
-  svgIcon.appendChild(path3);
-  
-  const h3 = document.createElement('h3');
-  h3.textContent = 'Prompt Pins';
-  
-  headerTitle.appendChild(svgIcon);
-  headerTitle.appendChild(h3);
+  headerTitle.innerHTML = `
+    <svg class="pin-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M12 2v20M16 6l-4 4-4-4M16 18l-4-4-4 4"/>
+    </svg>
+    <h3>Prompt Pins</h3>
+  `;
   
   const headerButtons = document.createElement('div');
   headerButtons.className = 'header-buttons';
   
+  const clearAllBtn = document.createElement('button');
+  clearAllBtn.id = 'clear-all-pins';
+  clearAllBtn.title = 'Clear all pins';
+  clearAllBtn.textContent = 'Clear';
+  
   const toggleBtn = document.createElement('button');
   toggleBtn.id = 'toggle-pins';
   toggleBtn.title = 'Toggle sidebar';
-  toggleBtn.textContent = '−';
+  toggleBtn.textContent = '-';
   
+  headerButtons.appendChild(clearAllBtn);
   headerButtons.appendChild(toggleBtn);
   header.appendChild(headerTitle);
   header.appendChild(headerButtons);
@@ -57,7 +42,7 @@ function createSidebar() {
   const nextBtn = document.createElement('button');
   nextBtn.id = 'next-pin';
   nextBtn.className = 'next-pin-btn';
-  nextBtn.textContent = 'Next Pin →';
+  nextBtn.textContent = 'Next Pin ->';
   
   // Create pins list
   const pinsList = document.createElement('div');
@@ -73,6 +58,7 @@ function createSidebar() {
   
   // Attach event listeners
   toggleBtn.addEventListener('click', toggleSidebar);
+  clearAllBtn.addEventListener('click', confirmClearAll);
   
   nextBtn.addEventListener('click', () => {
     if (pins.length > 0) {
@@ -89,14 +75,9 @@ function toggleSidebar() {
   const sidebar = document.getElementById('prompt-pins-sidebar');
   const toggle = document.getElementById('toggle-pins');
   
-  if (!sidebar || !toggle) {
-    console.error("Sidebar or toggle button not found");
-    return;
-  }
-  
   if (sidebarOpen) {
     sidebar.classList.remove('collapsed');
-    toggle.textContent = '−';
+    toggle.textContent = '-';
   } else {
     sidebar.classList.add('collapsed');
     toggle.textContent = '+';
@@ -105,24 +86,14 @@ function toggleSidebar() {
 
 // Load pins from storage
 async function loadPins() {
-  try {
-    const result = await browser.storage.local.get('pins');
-    pins = result.pins || [];
-    renderPins();
-  } catch (error) {
-    console.error("Failed to load pins:", error);
-    pins = [];
-    renderPins();
-  }
+  const result = await browser.storage.local.get('pins');
+  pins = result.pins || [];
+  renderPins();
 }
 
 // Save pins to storage
 async function savePins() {
-  try {
-    await browser.storage.local.set({ pins });
-  } catch (error) {
-    console.error("Failed to save pins:", error);
-  }
+  await browser.storage.local.set({ pins });
 }
 
 // Render the pins list
@@ -132,15 +103,18 @@ function renderPins() {
   
   if (!list) return;
   
-  // Enable/disable next button
+  // Enable/disable next button and clear all button
   if (nextBtn) {
     nextBtn.disabled = pins.length === 0;
   }
   
+  const clearAllBtn = document.getElementById('clear-all-pins');
+  if (clearAllBtn) {
+    clearAllBtn.disabled = pins.length === 0;
+  }
+  
   if (pins.length === 0) {
-    while (list.firstChild) {
-      list.removeChild(list.firstChild);
-    }
+    list.innerHTML = '';
     const emptyDiv = document.createElement('div');
     emptyDiv.className = 'empty-state';
     emptyDiv.textContent = 'No pins yet. Highlight text and right-click to create one.';
@@ -149,9 +123,7 @@ function renderPins() {
   }
   
   // Clear list
-  while (list.firstChild) {
-    list.removeChild(list.firstChild);
-  }
+  list.innerHTML = '';
   
   // Create pin items
   pins.forEach((pin, index) => {
@@ -183,7 +155,7 @@ function renderPins() {
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'delete-pin';
     deleteBtn.setAttribute('data-index', index);
-    deleteBtn.textContent = '×';
+    deleteBtn.textContent = 'Ã—';
     
     pinActions.appendChild(useBtn);
     pinActions.appendChild(deleteBtn);
@@ -231,7 +203,7 @@ function handleDragStart(e) {
   draggedIndex = parseInt(e.currentTarget.dataset.index);
   e.currentTarget.classList.add('dragging');
   e.dataTransfer.effectAllowed = 'move';
-  // Note: We use index-based reordering, so we don't need to transfer HTML
+  e.dataTransfer.setData('text/html', e.currentTarget.innerHTML);
 }
 
 function handleDragEnter(e) {
@@ -293,11 +265,6 @@ function createPin(text) {
 
 // Show comment input field
 function showCommentInput(selectedText) {
-  if (!selectedText || typeof selectedText !== 'string' || selectedText.trim().length === 0) {
-    console.error("Invalid selectedText:", selectedText);
-    return;
-  }
-  
   // Remove any existing comment input
   const existing = document.getElementById('pin-comment-input');
   if (existing) existing.remove();
@@ -467,16 +434,7 @@ function showCommentInput(selectedText) {
 
 // Use a pin (fill the ChatGPT input)
 function usePin(index, shouldDelete = false) {
-  if (index < 0 || index >= pins.length) {
-    console.error("Invalid pin index:", index);
-    return;
-  }
-  
   const pin = pins[index];
-  if (!pin) {
-    console.error("Pin not found at index:", index);
-    return;
-  }
   
   // ChatGPT uses a contenteditable div, not a textarea
   let inputElement = document.querySelector('#prompt-textarea');
@@ -488,9 +446,7 @@ function usePin(index, shouldDelete = false) {
   if (inputElement) {
     
     // Clear the input
-    while (inputElement.firstChild) {
-      inputElement.removeChild(inputElement.firstChild);
-    }
+    inputElement.innerHTML = '';
     
     if (pin.comment) {
       // Create paragraphs with an empty one in between
@@ -500,7 +456,7 @@ function usePin(index, shouldDelete = false) {
       
       // Add empty paragraph for spacing
       const emptyP = document.createElement('p');
-      emptyP.appendChild(document.createElement('br'));
+      emptyP.innerHTML = '<br>';
       inputElement.appendChild(emptyP);
       
       const commentP = document.createElement('p');
@@ -546,12 +502,101 @@ function usePin(index, shouldDelete = false) {
   }
 }
 
+// Show confirmation dialog before clearing all pins
+function confirmClearAll() {
+  if (pins.length === 0) {
+    return; // Nothing to clear
+  }
+  
+  // Create confirmation dialog
+  const overlay = document.createElement('div');
+  overlay.id = 'clear-all-overlay';
+  overlay.style.position = 'fixed';
+  overlay.style.top = '0';
+  overlay.style.left = '0';
+  overlay.style.width = '100%';
+  overlay.style.height = '100%';
+  overlay.style.background = 'rgba(0, 0, 0, 0.7)';
+  overlay.style.zIndex = '10001';
+  overlay.style.display = 'flex';
+  overlay.style.alignItems = 'center';
+  overlay.style.justifyContent = 'center';
+  
+  const dialog = document.createElement('div');
+  dialog.className = 'clear-all-dialog';
+  
+  const title = document.createElement('h3');
+  title.textContent = 'Clear All Pins?';
+  title.style.margin = '0 0 12px 0';
+  title.style.fontSize = '18px';
+  title.style.color = '#ececec';
+  
+  const message = document.createElement('p');
+  message.textContent = `Are you sure you want to delete all ${pins.length} pin${pins.length === 1 ? '' : 's'}? This action cannot be undone.`;
+  message.style.margin = '0 0 20px 0';
+  message.style.fontSize = '14px';
+  message.style.color = '#d1d5db';
+  message.style.lineHeight = '1.5';
+  
+  const buttons = document.createElement('div');
+  buttons.style.display = 'flex';
+  buttons.style.gap = '8px';
+  buttons.style.justifyContent = 'flex-end';
+  
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'clear-all-cancel';
+  cancelBtn.textContent = 'Cancel';
+  
+  const confirmBtn = document.createElement('button');
+  confirmBtn.className = 'clear-all-confirm';
+  confirmBtn.textContent = 'Clear All';
+  
+  buttons.appendChild(cancelBtn);
+  buttons.appendChild(confirmBtn);
+  
+  dialog.appendChild(title);
+  dialog.appendChild(message);
+  dialog.appendChild(buttons);
+  
+  overlay.appendChild(dialog);
+  document.body.appendChild(overlay);
+  
+  // Event handlers
+  const closeDialog = () => {
+    overlay.remove();
+  };
+  
+  cancelBtn.addEventListener('click', closeDialog);
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) {
+      closeDialog();
+    }
+  });
+  
+  confirmBtn.addEventListener('click', () => {
+    clearAllPins();
+    closeDialog();
+  });
+  
+  // Escape key to cancel
+  const handleEscape = (e) => {
+    if (e.key === 'Escape') {
+      closeDialog();
+      document.removeEventListener('keydown', handleEscape);
+    }
+  };
+  document.addEventListener('keydown', handleEscape);
+}
+
+// Clear all pins
+function clearAllPins() {
+  pins = [];
+  savePins();
+  renderPins();
+}
+
 // Delete a pin
 function deletePin(index) {
-  if (index < 0 || index >= pins.length) {
-    console.error("Invalid pin index for deletion:", index);
-    return;
-  }
   pins.splice(index, 1);
   savePins();
   renderPins();
@@ -560,14 +605,9 @@ function deletePin(index) {
 // Listen for messages from background script
 browser.runtime.onMessage.addListener((message) => {
   if (message.action === 'createPin') {
-    if (!message.selectedText || typeof message.selectedText !== 'string') {
-      console.error("Invalid selectedText in message:", message);
-      return Promise.resolve({success: false, error: "Invalid selectedText"});
-    }
     createPin(message.selectedText);
     return Promise.resolve({success: true});
   }
-  return Promise.resolve({success: false, error: "Unknown action"});
 });
 
 // Initialize when page loads
