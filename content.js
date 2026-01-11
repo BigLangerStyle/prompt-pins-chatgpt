@@ -4,6 +4,50 @@ let sidebarOpen = true;
 let queuedPinIndex = null;
 let isWatchingForSubmit = false;
 
+// Helper function to get current chat ID from URL
+function getCurrentChatId() {
+  const match = window.location.pathname.match(/\/c\/([^\/]+)/);
+  return match ? match[1] : null;
+}
+
+// Helper function to get current chat title from the page
+function getCurrentChatTitle() {
+  const currentChatId = getCurrentChatId();
+  if (!currentChatId) return null;
+  
+  // Method 1: Look for the active/selected chat in the sidebar
+  // The active chat usually has aria-current="page" or a selected/active class
+  const activeLink = document.querySelector('[aria-current="page"]');
+  if (activeLink) {
+    const chatName = activeLink.textContent.trim();
+    if (chatName && chatName.length > 0) {
+      return chatName;
+    }
+  }
+  
+  // Method 2: Try to find a link in the sidebar that matches our chat ID
+  const chatLinks = document.querySelectorAll('a[href*="/c/"]');
+  for (const link of chatLinks) {
+    if (link.href.includes(currentChatId)) {
+      const chatName = link.textContent.trim();
+      if (chatName && chatName.length > 0) {
+        return chatName;
+      }
+    }
+  }
+  
+  // Method 3: Try document title as fallback
+  if (document.title && document.title !== 'ChatGPT') {
+    const titleParts = document.title.split(' - ');
+    if (titleParts.length > 0 && titleParts[0].trim()) {
+      return titleParts[0].trim();
+    }
+  }
+  
+  // Method 4: Fallback - return null if we can't find it
+  return null;
+}
+
 // Create and inject the sidebar
 function createSidebar() {
   const sidebar = document.createElement('div');
@@ -127,6 +171,9 @@ function renderPins() {
   // Clear list
   list.innerHTML = '';
 
+  // Get current chat ID for comparison
+  const currentChatId = getCurrentChatId();
+
   // Create pin items
   pins.forEach((pin, index) => {
     const pinItem = document.createElement('div');
@@ -138,6 +185,12 @@ function renderPins() {
     const isQueued = queuedPinIndex === index;
     if (isQueued) {
       pinItem.classList.add('queued');
+    }
+
+    // Check if pin is from a different chat
+    const isFromDifferentChat = pin.chatId && currentChatId && pin.chatId !== currentChatId;
+    if (isFromDifferentChat) {
+      pinItem.classList.add('cross-chat');
     }
 
     const pinText = document.createElement('div');
@@ -152,11 +205,24 @@ function renderPins() {
       pinItem.appendChild(pinComment);
     }
 
+    // Show cross-chat badge if pin is from another chat
+    if (isFromDifferentChat) {
+      const crossChatBadge = document.createElement('div');
+      crossChatBadge.className = 'cross-chat-badge';
+      // Show chat title if available, otherwise generic message
+      if (pin.chatTitle) {
+        crossChatBadge.textContent = `From: ${pin.chatTitle}`;
+      } else {
+        crossChatBadge.textContent = 'From another chat';
+      }
+      pinItem.appendChild(crossChatBadge);
+    }
+
     // Show queued badge if this pin is queued
     if (isQueued) {
       const queuedBadge = document.createElement('div');
       queuedBadge.className = 'queued-badge';
-      queuedBadge.textContent = 'â³ Queued - waiting for ChatGPT to finish...';
+      queuedBadge.textContent = 'Ã¢ÂÂ³ Queued - waiting for ChatGPT to finish...';
       pinItem.appendChild(queuedBadge);
     }
 
@@ -186,7 +252,7 @@ function renderPins() {
       const deleteBtn = document.createElement('button');
       deleteBtn.className = 'delete-pin';
       deleteBtn.setAttribute('data-index', index);
-      deleteBtn.textContent = '×';
+      deleteBtn.textContent = 'Ã—';
 
       pinActions.appendChild(useBtn);
       pinActions.appendChild(deleteBtn);
@@ -440,13 +506,25 @@ function showCommentInput(selectedText) {
 
   // Save pin
   document.getElementById('pin-save').addEventListener('click', () => {
+    console.log('[Prompt Pins] Save button clicked');
     const comment = input.value.trim();
+    
+    const chatId = getCurrentChatId();
+    const chatTitle = getCurrentChatTitle();
+    console.log('[Prompt Pins] Chat ID:', chatId);
+    console.log('[Prompt Pins] Chat Title:', chatTitle);
 
-    pins.push({
+    const newPin = {
       text: selectedText,
       comment: comment || null,
-      timestamp: Date.now()
-    });
+      timestamp: Date.now(),
+      chatId: chatId,
+      chatTitle: chatTitle
+    };
+    
+    console.log('[Prompt Pins] Creating pin:', newPin);
+    pins.push(newPin);
+    console.log('[Prompt Pins] Total pins:', pins.length);
 
     savePins();
     renderPins();
@@ -530,10 +608,16 @@ function usePin(index, shouldDelete = false) {
     // Clear the input
     inputElement.innerHTML = '';
 
+    // Check if this pin is from a different chat
+    const currentChatId = getCurrentChatId();
+    const isFromDifferentChat = pin.chatId && currentChatId && pin.chatId !== currentChatId;
+
     if (pin.comment) {
       // Create paragraphs with an empty one in between
       const regardingP = document.createElement('p');
-      regardingP.textContent = `Regarding: "${pin.text}"`;
+      // Use different prefix for cross-chat pins
+      const prefix = isFromDifferentChat ? 'From another conversation' : 'Regarding';
+      regardingP.textContent = `${prefix}: "${pin.text}"`;
       inputElement.appendChild(regardingP);
 
       // Add empty paragraph for spacing
@@ -545,9 +629,10 @@ function usePin(index, shouldDelete = false) {
       commentP.textContent = pin.comment;
       inputElement.appendChild(commentP);
     } else {
-      // Just the text with "Expand on:" prefix
+      // Just the text with appropriate prefix
       const p = document.createElement('p');
-      p.textContent = `Expand on: "${pin.text}"`;
+      const prefix = isFromDifferentChat ? 'From another conversation' : 'Expand on';
+      p.textContent = `${prefix}: "${pin.text}"`;
       inputElement.appendChild(p);
     }
 
@@ -599,9 +684,15 @@ function queuePin(index) {
     // Clear the input
     inputElement.innerHTML = '';
 
+    // Check if this pin is from a different chat
+    const currentChatId = getCurrentChatId();
+    const isFromDifferentChat = pin.chatId && currentChatId && pin.chatId !== currentChatId;
+
     if (pin.comment) {
       const regardingP = document.createElement('p');
-      regardingP.textContent = `Regarding: "${pin.text}"`;
+      // Use different prefix for cross-chat pins
+      const prefix = isFromDifferentChat ? 'From another conversation' : 'Regarding';
+      regardingP.textContent = `${prefix}: "${pin.text}"`;
       inputElement.appendChild(regardingP);
 
       const emptyP = document.createElement('p');
@@ -613,7 +704,8 @@ function queuePin(index) {
       inputElement.appendChild(commentP);
     } else {
       const p = document.createElement('p');
-      p.textContent = `Expand on: "${pin.text}"`;
+      const prefix = isFromDifferentChat ? 'From another conversation' : 'Expand on';
+      p.textContent = `${prefix}: "${pin.text}"`;
       inputElement.appendChild(p);
     }
 
@@ -884,6 +976,21 @@ browser.runtime.onMessage.addListener((message) => {
     return Promise.resolve({success: true});
   }
 });
+
+// Watch for URL changes (when user switches chats)
+let lastChatId = getCurrentChatId();
+
+function checkForChatChange() {
+  const currentChatId = getCurrentChatId();
+  if (currentChatId !== lastChatId) {
+    lastChatId = currentChatId;
+    // Re-render pins to update cross-chat styling
+    renderPins();
+  }
+}
+
+// Check for chat changes every 500ms
+setInterval(checkForChatChange, 500);
 
 // Initialize when page loads
 if (document.readyState === 'loading') {
