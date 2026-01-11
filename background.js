@@ -14,6 +14,22 @@ browser.contextMenus.onClicked.addListener((info, tab) => {
     browser.tabs.sendMessage(tab.id, {
       action: "createPin",
       selectedText: info.selectionText
+    }).catch((error) => {
+      // Content script may not be loaded or tab may have navigated away
+      console.error("Failed to send message to content script:", error);
     });
   }
+});
+
+// Handle keyboard shortcuts
+browser.commands.onCommand.addListener((command) => {
+  browser.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
+    if (tabs[0]) {
+      browser.tabs.sendMessage(tabs[0].id, {
+        action: command
+      }).catch((error) => {
+        console.error("Failed to send command to content script:", error);
+      });
+    }
+  });
 });

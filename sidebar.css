@@ -20,8 +20,26 @@
 
 #prompt-pins-sidebar.collapsed .pins-list,
 #prompt-pins-sidebar.collapsed .next-pin-btn,
-#prompt-pins-sidebar.collapsed .pins-header-title {
+#prompt-pins-sidebar.collapsed .pins-header-title,
+#prompt-pins-sidebar.collapsed #clear-all-pins {
   display: none;
+}
+
+#prompt-pins-sidebar.collapsed .pins-header {
+  justify-content: center;
+  width: 40px;
+  padding: 16px 0;
+  border: none;
+}
+
+#prompt-pins-sidebar.collapsed .header-buttons {
+  margin: 0;
+  padding: 0;
+}
+
+#prompt-pins-sidebar.collapsed #toggle-pins {
+  display: flex;
+  margin: 0 auto;
 }
 
 .pins-header {
@@ -74,6 +92,37 @@
 
 #toggle-pins:hover {
   background: #3e3e3e;
+}
+
+#clear-all-pins {
+  background: none;
+  border: none;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  color: #9ca3af;
+  padding: 4px 8px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+#clear-all-pins:hover {
+  background: #3e3e3e;
+  color: #ef4444;
+}
+
+#clear-all-pins:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+#clear-all-pins:disabled:hover {
+  background: none;
+  color: #9ca3af;
 }
 
 .pins-list {
@@ -283,4 +332,106 @@
   background: #3e3e3e;
   color: #6b7280;
   cursor: not-allowed;
+}
+
+/* Clear All confirmation dialog */
+.clear-all-dialog {
+  background: #212121;
+  border: 2px solid #ef4444;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+  min-width: 320px;
+  max-width: 400px;
+}
+
+.clear-all-cancel,
+.clear-all-confirm {
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  border: none;
+  font-weight: 500;
+}
+
+.clear-all-cancel {
+  background: #2a2a2a;
+  color: #ececec;
+  border: 1px solid #3e3e3e;
+}
+
+.clear-all-cancel:hover {
+  background: #3e3e3e;
+}
+
+.clear-all-confirm {
+  background: #ef4444;
+  color: white;
+}
+
+.clear-all-confirm:hover {
+  background: #dc2626;
+}
+/* Queue system styles */
+.pin-item.queued {
+  border-color: #f59e0b;
+  background: #2a2a2a;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.3);
+}
+
+.queued-badge {
+  font-size: 12px;
+  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.1);
+  padding: 6px 10px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+}
+
+.cancel-queue-btn {
+  font-size: 13px;
+  padding: 6px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background: #ef4444;
+  color: white;
+  flex: 1;
+  transition: background-color 0.2s;
+}
+
+.cancel-queue-btn:hover {
+  background: #dc2626;
+}
+
+/* Cross-chat pin styles */
+.pin-item.cross-chat {
+  opacity: 0.6;
+  background: #1f1f1f;
+  border-color: #2d2d2d;
+}
+
+.pin-item.cross-chat:hover {
+  opacity: 0.8;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  border-color: #3a3a3a;
+}
+
+.cross-chat-badge {
+  font-size: 11px;
+  color: #9ca3af;
+  background: rgba(75, 85, 99, 0.2);
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
+  border-left: 2px solid #6b7280;
 }
