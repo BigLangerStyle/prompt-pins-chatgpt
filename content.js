@@ -14,7 +14,7 @@ function getCurrentChatId() {
 function getCurrentChatTitle() {
   const currentChatId = getCurrentChatId();
   if (!currentChatId) return null;
-  
+
   // Method 1: Look for the active/selected chat in the sidebar
   // The active chat usually has aria-current="page" or a selected/active class
   const activeLink = document.querySelector('[aria-current="page"]');
@@ -24,7 +24,7 @@ function getCurrentChatTitle() {
       return chatName;
     }
   }
-  
+
   // Method 2: Try to find a link in the sidebar that matches our chat ID
   const chatLinks = document.querySelectorAll('a[href*="/c/"]');
   for (const link of chatLinks) {
@@ -35,7 +35,7 @@ function getCurrentChatTitle() {
       }
     }
   }
-  
+
   // Method 3: Try document title as fallback
   if (document.title && document.title !== 'ChatGPT') {
     const titleParts = document.title.split(' - ');
@@ -43,7 +43,7 @@ function getCurrentChatTitle() {
       return titleParts[0].trim();
     }
   }
-  
+
   // Method 4: Fallback - return null if we can't find it
   return null;
 }
@@ -222,7 +222,7 @@ function renderPins() {
     if (isQueued) {
       const queuedBadge = document.createElement('div');
       queuedBadge.className = 'queued-badge';
-      queuedBadge.textContent = 'Ã¢ÂÂ³ Queued - waiting for ChatGPT to finish...';
+      queuedBadge.textContent = '⏳ Queued - waiting for ChatGPT to finish...';
       pinItem.appendChild(queuedBadge);
     }
 
@@ -252,7 +252,7 @@ function renderPins() {
       const deleteBtn = document.createElement('button');
       deleteBtn.className = 'delete-pin';
       deleteBtn.setAttribute('data-index', index);
-      deleteBtn.textContent = 'Ã—';
+      deleteBtn.textContent = '×';
 
       pinActions.appendChild(useBtn);
       pinActions.appendChild(deleteBtn);
@@ -267,7 +267,6 @@ function renderPins() {
 
     list.appendChild(pinItem);
   });
-
 
   // Add event listeners
   list.querySelectorAll('.use-pin').forEach(btn => {
@@ -506,13 +505,10 @@ function showCommentInput(selectedText) {
 
   // Save pin
   document.getElementById('pin-save').addEventListener('click', () => {
-    console.log('[Prompt Pins] Save button clicked');
     const comment = input.value.trim();
-    
+
     const chatId = getCurrentChatId();
     const chatTitle = getCurrentChatTitle();
-    console.log('[Prompt Pins] Chat ID:', chatId);
-    console.log('[Prompt Pins] Chat Title:', chatTitle);
 
     const newPin = {
       text: selectedText,
@@ -521,10 +517,8 @@ function showCommentInput(selectedText) {
       chatId: chatId,
       chatTitle: chatTitle
     };
-    
-    console.log('[Prompt Pins] Creating pin:', newPin);
+
     pins.push(newPin);
-    console.log('[Prompt Pins] Total pins:', pins.length);
 
     savePins();
     renderPins();
@@ -792,7 +786,6 @@ function submitQueuedPin() {
   }
 }
 
-
 // Show confirmation dialog before clearing all pins
 function confirmClearAll() {
   if (pins.length === 0) {
@@ -823,7 +816,9 @@ function confirmClearAll() {
   title.style.color = '#ececec';
 
   const message = document.createElement('p');
-  message.textContent = `Are you sure you want to delete all ${pins.length} pin${pins.length === 1 ? '' : 's'}? This action cannot be undone.`;
+  message.textContent = `Are you sure you want to delete all ${pins.length} pin${
+    pins.length === 1 ? '' : 's'
+  }? This action cannot be undone.`;
   message.style.margin = '0 0 20px 0';
   message.style.fontSize = '14px';
   message.style.color = '#d1d5db';
@@ -895,34 +890,34 @@ function getSelectedText() {
 // Send selected text immediately (bypass pin creation)
 function sendImmediately() {
   const selectedText = getSelectedText();
-  
+
   if (!selectedText) {
     return; // No text selected
   }
-  
+
   // Find ChatGPT input
   let inputElement = document.querySelector('#prompt-textarea');
-  
+
   if (!inputElement) {
     inputElement = document.querySelector('[contenteditable="true"]');
   }
-  
+
   if (inputElement) {
     // Clear the input
     inputElement.innerHTML = '';
-    
+
     // Add the text with "Expand on:" prefix
     const p = document.createElement('p');
     p.textContent = `Expand on: "${selectedText}"`;
     inputElement.appendChild(p);
-    
+
     // Trigger input events
     inputElement.dispatchEvent(new Event('input', { bubbles: true }));
     inputElement.dispatchEvent(new Event('change', { bubbles: true }));
-    
+
     // Focus the element
     inputElement.focus();
-    
+
     // Move cursor to end
     const range = document.createRange();
     const sel = window.getSelection();
@@ -930,13 +925,13 @@ function sendImmediately() {
     range.collapse(false);
     sel.removeAllRanges();
     sel.addRange(range);
-    
+
     // Auto-submit after brief delay
     setTimeout(() => {
-      const sendButton = document.querySelector('button[data-testid="send-button"]') 
+      const sendButton = document.querySelector('button[data-testid="send-button"]')
         || document.querySelector('button[aria-label="Send prompt"]')
         || document.querySelector('button svg[class*="icon-send"]')?.closest('button');
-      
+
       if (sendButton && !sendButton.disabled) {
         sendButton.click();
       }
