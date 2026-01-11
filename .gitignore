@@ -5,6 +5,7 @@ web-ext-artifacts/
 
 # Internal planning documents
 PROJECT_SUMMARY.md
+TESTING_CHECKLIST*.md
 
 # Operating System files
 .DS_Store
