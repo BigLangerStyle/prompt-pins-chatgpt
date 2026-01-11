@@ -1,7 +1,8 @@
-# Firefox extension build artifacts
+# Extension build artifacts
 *.xpi
 *.zip
 web-ext-artifacts/
+build/
 
 # Internal planning documents
 PROJECT_SUMMARY.md
