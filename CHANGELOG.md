@@ -12,13 +12,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added `browser.runtime.onStartup` listener to recreate context menu on browser startup
   - Previously, context menu would disappear after closing and reopening Firefox
   - Added context menu cleanup to prevent duplicate menu items
+- **CRITICAL:** Fixed Firefox icon paths in manifest (icon48.png → icons/icon48.png)
+  - Extension icon now displays correctly in Firefox
+- **CRITICAL:** Fixed Chrome keyboard shortcuts syntax
+  - Changed from Ctrl+Alt to Ctrl+Shift (Chrome doesn't support Ctrl+Alt combinations)
+  - Added Mac-specific shortcuts (Command+Shift)
+  - Extension now loads without manifest errors in Chrome
 - Improved error handling and logging for context menu creation
 - Fixed `strict_min_version` in manifest to "142.0" (supports data_collection_permissions on both desktop and Android)
+
+### Added
+- **Chrome/Edge support** with Manifest V3
+- **Monorepo structure** with automated build system
+  - `npm run build:firefox` - Build Firefox extension
+  - `npm run build:chrome` - Build Chrome extension
+  - `npm run build:all` - Build both browsers
+- **Build scripts** for automated multi-browser packaging
+- **Browser-specific keyboard shortcuts**:
+  - Firefox: Ctrl+Alt+P/S/N (Cmd+Alt on Mac)
+  - Chrome/Edge: Ctrl+Shift+P/S/N (Cmd+Shift on Mac)
 
 ### Technical
 - Background script now uses helper function `createContextMenu()` for better maintainability
 - Added console logging with "Prompt Pins:" prefix for easier debugging
 - Context menus now properly removed before recreation to prevent ID conflicts
+- Build system automatically converts `browser.*` API to `chrome.*` for Chrome compatibility
 
 ## [1.1.0] - 2025-01-11
 
@@ -44,7 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Collapsed sidebar button now properly centered and visible
-- Character encoding issues with special symbols (Ã— and â³)
+- Character encoding issues with special symbols
 - Removed trailing whitespace and debug console.log statements
 
 ### Technical

@@ -5,7 +5,7 @@ A browser extension for Firefox and Chrome that lets you save questions and prom
 ## Features
 
 - **Pin Any Text**: Highlight text in a ChatGPT conversation and right-click to pin it
-- **Keyboard Shortcuts**: Use hotkeys for quick pin creation and usage (Ctrl+Alt+P, S, N)
+- **Keyboard Shortcuts**: Use hotkeys for quick pin creation and usage
 - **Smart Queue System**: Automatically queues pins if ChatGPT is busy, submits when ready
 - **Add Context**: Optionally add a note or comment to each pin
 - **Quick Access**: Use the "Next Pin" button to automatically load and submit your next question
@@ -72,26 +72,19 @@ _Coming soon to Chrome Web Store_
 
 ## Keyboard Shortcuts
 
-### `Ctrl+Alt+P` - Create Pin
+### Firefox Shortcuts
 
-- Highlight any text in the ChatGPT interface
-- Press `Ctrl+Alt+P` (or `Cmd+Alt+P` on Mac)
-- Opens the pin creation dialog where you can add optional notes
-- Same as right-clicking and selecting "Pin prompt"
+- **`Ctrl+Alt+P`** (or `Cmd+Alt+P` on Mac) - Create a pin from selected text
+- **`Ctrl+Alt+S`** (or `Cmd+Alt+S` on Mac) - Send selected text immediately with "Expand on:" prefix
+- **`Ctrl+Alt+N`** (or `Cmd+Alt+N` on Mac) - Use the next pin in queue
 
-### `Ctrl+Alt+S` - Send Immediately
+### Chrome/Edge Shortcuts
 
-- Highlight any text in the ChatGPT interface
-- Press `Ctrl+Alt+S` (or `Cmd+Alt+S` on Mac)
-- Sends the text directly to ChatGPT with "Expand on:" prefix
-- Perfect for quick questions without creating a pin
+- **`Ctrl+Shift+P`** (or `Cmd+Shift+P` on Mac) - Create a pin from selected text
+- **`Ctrl+Shift+S`** (or `Cmd+Shift+S` on Mac) - Send selected text immediately with "Expand on:" prefix
+- **`Ctrl+Shift+N`** (or `Cmd+Shift+N` on Mac) - Use the next pin in queue
 
-### `Ctrl+Alt+N` - Use Next Pin
-
-- Press `Ctrl+Alt+N` (or `Cmd+Alt+N` on Mac) from anywhere on the page
-- Uses the first pin in your queue (same as clicking "Next Pin ->")
-- Pin is automatically submitted and removed from the list
-- Works even when the sidebar is collapsed
+> **Note:** Chrome doesn't support `Ctrl+Alt` shortcuts, so Chrome/Edge uses `Ctrl+Shift` instead.
 
 ### Customizing Shortcuts
 
@@ -138,20 +131,20 @@ See [PRIVACY.md](PRIVACY.md) for full details.
 
 **Keyboard shortcut:**
 1. Highlight any text in a ChatGPT conversation
-2. Press **`Ctrl+Alt+P`** (or `Cmd+Alt+P` on Mac)
+2. Press the keyboard shortcut for your browser (see Keyboard Shortcuts section)
 3. Optionally add a comment for context
 4. Click **"Save Pin"** (or press Enter)
 
 ### Sending Text Immediately
 
 1. Highlight any text in a ChatGPT conversation
-2. Press **`Ctrl+Alt+S`** (or `Cmd+Alt+S` on Mac)
+2. Press the send-immediately shortcut for your browser
 3. Text is sent to ChatGPT with "Expand on:" prefix without creating a pin
 
 ### Using Pins
 
 - **Next Pin Button**: Click "Next Pin ->" to use the first pin in your queue
-- **Keyboard**: Press **`Ctrl+Alt+N`** (or `Cmd+Alt+N` on Mac) to use the next pin
+- **Keyboard**: Press the use-next-pin shortcut for your browser
 - **Individual Use**: Click "Use" on any specific pin
 - If ChatGPT is busy, the pin automatically queues and submits when ready
 - Pins are automatically submitted to ChatGPT and removed after use
@@ -253,6 +246,8 @@ Copyright (c) 2025 Prompt Pins Contributors
 - **CRITICAL FIX:** Context menu "Pin prompt" now appears reliably after browser restart
 - **FIXED:** Added browser startup listener to recreate context menu when Firefox starts
 - **FIXED:** Firefox minimum version set to 142.0 (supports data_collection_permissions on both desktop and Android)
+- **FIXED:** Icon paths corrected in Firefox manifest
+- **FIXED:** Chrome keyboard shortcuts changed to Ctrl+Shift (Chrome doesn't support Ctrl+Alt)
 - **IMPROVED:** Better error handling and logging for debugging
 - **NEW:** Chrome/Edge support with Manifest V3
 - **NEW:** Monorepo structure with automated build system
