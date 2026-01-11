@@ -205,7 +205,7 @@ Copyright (c) 2025 Prompt Pins Contributors
 
 ## Version History
 
-### 1.1.0 (January 10, 2025)
+### 1.1.0 (January 11, 2025)
 
 - **NEW:** Keyboard shortcuts
   - `Ctrl+Alt+P` - Create a pin from selected text
@@ -213,8 +213,11 @@ Copyright (c) 2025 Prompt Pins Contributors
   - `Ctrl+Alt+N` - Use the next pin in queue
 - **NEW:** Smart Queue System - Automatically queues pins when ChatGPT is busy
 - **NEW:** Clear All Pins feature with confirmation dialog
+- **NEW:** Chat-aware pins - Pins track which chat they came from and are visually distinguished when viewing in different chats
 - **IMPROVED:** Pins without comments now use "Expand on:" prefix
 - **IMPROVED:** Pins with comments use "Regarding:" prefix for better context
+- **IMPROVED:** Code optimization - Eliminated duplication, added helper functions, improved maintainability
+- **FIXED:** Collapsed sidebar button now properly centered and visible
 
 ### 1.0.0 (January 7, 2025)
 

@@ -1,23 +1,105 @@
-// State
+// ============================================================================
+// CONSTANTS
+// ============================================================================
+
+const SELECTORS = {
+  INPUT: '#prompt-textarea',
+  INPUT_FALLBACK: '[contenteditable="true"]',
+  SEND_BUTTON: 'button[data-testid="send-button"]',
+  SEND_BUTTON_ALT: 'button[aria-label="Send prompt"]',
+  SEND_BUTTON_ICON: 'button svg[class*="icon-send"]',
+  STOP_BUTTON: 'button[aria-label*="Stop"]',
+  STOP_BUTTON_ALT: 'button[aria-label*="stop"]',
+  ACTIVE_CHAT: '[aria-current="page"]',
+  CHAT_LINKS: 'a[href*="/c/"]',
+  STREAMING_INDICATOR: '[data-testid="streaming-indicator"]',
+  STREAMING_INDICATOR_ALT: '.streaming-indicator'
+};
+
+const TIMINGS = {
+  AUTO_SUBMIT_DELAY: 100,
+  QUEUE_CHECK_INTERVAL: 500,
+  CHAT_CHANGE_CHECK: 500
+};
+
+const UI_TEXT = {
+  EXPAND_PREFIX: 'Expand on',
+  REGARDING_PREFIX: 'Regarding',
+  CROSS_CHAT_PREFIX: 'From another conversation',
+  EMPTY_STATE: 'No pins yet. Highlight text and right-click to create one.',
+  QUEUED_BADGE: '⏳ Queued - waiting for ChatGPT to finish...',
+  DELETE_SYMBOL: '×'
+};
+
+// ============================================================================
+// STATE
+// ============================================================================
+
 let pins = [];
 let sidebarOpen = true;
 let queuedPinIndex = null;
 let isWatchingForSubmit = false;
 
-// Helper function to get current chat ID from URL
+// Cached DOM elements
+const cachedElements = {
+  sidebar: null,
+  pinsList: null,
+  nextBtn: null,
+  clearBtn: null,
+  toggleBtn: null
+};
+
+// ============================================================================
+// HELPER FUNCTIONS - DOM
+// ============================================================================
+
+// Get ChatGPT input element
+function getChatGPTInput() {
+  return document.querySelector(SELECTORS.INPUT)
+    || document.querySelector(SELECTORS.INPUT_FALLBACK);
+}
+
+// Get ChatGPT send button
+function getSendButton() {
+  return document.querySelector(SELECTORS.SEND_BUTTON)
+    || document.querySelector(SELECTORS.SEND_BUTTON_ALT)
+    || document.querySelector(SELECTORS.SEND_BUTTON_ICON)?.closest('button');
+}
+
+// Move cursor to end of contenteditable element
+function moveCursorToEnd(element) {
+  element.focus();
+  const range = document.createRange();
+  const sel = window.getSelection();
+  range.selectNodeContents(element);
+  range.collapse(false);
+  sel.removeAllRanges();
+  sel.addRange(range);
+}
+
+// Trigger ChatGPT's input events
+function triggerInputEvents(element) {
+  element.dispatchEvent(new Event('input', { bubbles: true }));
+  element.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+// ============================================================================
+// HELPER FUNCTIONS - CHAT
+// ============================================================================
+
+// Get current chat ID from URL
 function getCurrentChatId() {
   const match = window.location.pathname.match(/\/c\/([^\/]+)/);
   return match ? match[1] : null;
 }
 
-// Helper function to get current chat title from the page
+// Get current chat title from the page
 function getCurrentChatTitle() {
   const currentChatId = getCurrentChatId();
   if (!currentChatId) return null;
 
   // Method 1: Look for the active/selected chat in the sidebar
-  // The active chat usually has aria-current="page" or a selected/active class
-  const activeLink = document.querySelector('[aria-current="page"]');
+  const activeLink = document.querySelector(SELECTORS.ACTIVE_CHAT);
   if (activeLink) {
     const chatName = activeLink.textContent.trim();
     if (chatName && chatName.length > 0) {
@@ -26,7 +108,7 @@ function getCurrentChatTitle() {
   }
 
   // Method 2: Try to find a link in the sidebar that matches our chat ID
-  const chatLinks = document.querySelectorAll('a[href*="/c/"]');
+  const chatLinks = document.querySelectorAll(SELECTORS.CHAT_LINKS);
   for (const link of chatLinks) {
     if (link.href.includes(currentChatId)) {
       const chatName = link.textContent.trim();
@@ -47,6 +129,91 @@ function getCurrentChatTitle() {
   // Method 4: Fallback - return null if we can't find it
   return null;
 }
+
+// Check if ChatGPT is currently generating a response
+function isChatGPTGenerating() {
+  // Method 1: Look for "Stop generating" button
+  const stopButton = document.querySelector(SELECTORS.STOP_BUTTON)
+    || document.querySelector(SELECTORS.STOP_BUTTON_ALT)
+    || Array.from(document.querySelectorAll('button')).find(btn =>
+      btn.textContent.toLowerCase().includes('stop generating')
+    );
+
+  if (stopButton) return true;
+
+  // Method 2: Check if send button is disabled
+  const sendButton = getSendButton();
+  if (sendButton && sendButton.disabled) return true;
+
+  // Method 3: Look for streaming indicator elements
+  const streamingIndicator = document.querySelector(SELECTORS.STREAMING_INDICATOR)
+    || document.querySelector(SELECTORS.STREAMING_INDICATOR_ALT);
+
+  if (streamingIndicator) return true;
+
+  return false;
+}
+
+// ============================================================================
+// HELPER FUNCTIONS - PIN OPERATIONS
+// ============================================================================
+
+// Fill ChatGPT input with pin content
+function fillInputWithPin(pin) {
+  const inputElement = getChatGPTInput();
+  if (!inputElement) return false;
+
+  inputElement.innerHTML = '';
+  const currentChatId = getCurrentChatId();
+  const isFromDifferentChat = pin.chatId && currentChatId && pin.chatId !== currentChatId;
+
+  if (pin.comment) {
+    const prefix = isFromDifferentChat ? UI_TEXT.CROSS_CHAT_PREFIX : UI_TEXT.REGARDING_PREFIX;
+    const regardingP = document.createElement('p');
+    regardingP.textContent = `${prefix}: "${pin.text}"`;
+    inputElement.appendChild(regardingP);
+
+    const emptyP = document.createElement('p');
+    emptyP.innerHTML = '<br>';
+    inputElement.appendChild(emptyP);
+
+    const commentP = document.createElement('p');
+    commentP.textContent = pin.comment;
+    inputElement.appendChild(commentP);
+  } else {
+    const prefix = isFromDifferentChat ? UI_TEXT.CROSS_CHAT_PREFIX : UI_TEXT.EXPAND_PREFIX;
+    const p = document.createElement('p');
+    p.textContent = `${prefix}: "${pin.text}"`;
+    inputElement.appendChild(p);
+  }
+
+  triggerInputEvents(inputElement);
+  moveCursorToEnd(inputElement);
+  return true;
+}
+
+// Auto-submit the current input to ChatGPT
+function autoSubmitInput() {
+  setTimeout(() => {
+    const sendButton = getSendButton();
+    if (sendButton && !sendButton.disabled) {
+      sendButton.click();
+    }
+  }, TIMINGS.AUTO_SUBMIT_DELAY);
+}
+
+// Clear the ChatGPT input field
+function clearChatGPTInput() {
+  const inputElement = getChatGPTInput();
+  if (inputElement) {
+    inputElement.innerHTML = '';
+    triggerInputEvents(inputElement);
+  }
+}
+
+// ============================================================================
+// SIDEBAR CREATION
+// ============================================================================
 
 // Create and inject the sidebar
 function createSidebar() {
@@ -102,10 +269,16 @@ function createSidebar() {
 
   document.body.appendChild(sidebar);
 
+  // Cache elements
+  cachedElements.sidebar = sidebar;
+  cachedElements.pinsList = pinsList;
+  cachedElements.nextBtn = nextBtn;
+  cachedElements.clearBtn = clearAllBtn;
+  cachedElements.toggleBtn = toggleBtn;
+
   // Attach event listeners
   toggleBtn.addEventListener('click', toggleSidebar);
   clearAllBtn.addEventListener('click', confirmClearAll);
-
   nextBtn.addEventListener('click', () => {
     if (pins.length > 0) {
       usePin(0, true);
@@ -118,8 +291,8 @@ function createSidebar() {
 
 function toggleSidebar() {
   sidebarOpen = !sidebarOpen;
-  const sidebar = document.getElementById('prompt-pins-sidebar');
-  const toggle = document.getElementById('toggle-pins');
+  const sidebar = cachedElements.sidebar;
+  const toggle = cachedElements.toggleBtn;
 
   if (sidebarOpen) {
     sidebar.classList.remove('collapsed');
@@ -129,6 +302,10 @@ function toggleSidebar() {
     toggle.textContent = '+';
   }
 }
+
+// ============================================================================
+// PIN STORAGE
+// ============================================================================
 
 // Load pins from storage
 async function loadPins() {
@@ -142,10 +319,15 @@ async function savePins() {
   await browser.storage.local.set({ pins });
 }
 
+// ============================================================================
+// PIN RENDERING
+// ============================================================================
+
 // Render the pins list
 function renderPins() {
-  const list = document.getElementById('pins-list');
-  const nextBtn = document.getElementById('next-pin');
+  const list = cachedElements.pinsList;
+  const nextBtn = cachedElements.nextBtn;
+  const clearAllBtn = cachedElements.clearBtn;
 
   if (!list) return;
 
@@ -154,7 +336,6 @@ function renderPins() {
     nextBtn.disabled = pins.length === 0 || queuedPinIndex !== null;
   }
 
-  const clearAllBtn = document.getElementById('clear-all-pins');
   if (clearAllBtn) {
     clearAllBtn.disabled = pins.length === 0;
   }
@@ -163,7 +344,7 @@ function renderPins() {
     list.innerHTML = '';
     const emptyDiv = document.createElement('div');
     emptyDiv.className = 'empty-state';
-    emptyDiv.textContent = 'No pins yet. Highlight text and right-click to create one.';
+    emptyDiv.textContent = UI_TEXT.EMPTY_STATE;
     list.appendChild(emptyDiv);
     return;
   }
@@ -209,7 +390,6 @@ function renderPins() {
     if (isFromDifferentChat) {
       const crossChatBadge = document.createElement('div');
       crossChatBadge.className = 'cross-chat-badge';
-      // Show chat title if available, otherwise generic message
       if (pin.chatTitle) {
         crossChatBadge.textContent = `From: ${pin.chatTitle}`;
       } else {
@@ -222,7 +402,7 @@ function renderPins() {
     if (isQueued) {
       const queuedBadge = document.createElement('div');
       queuedBadge.className = 'queued-badge';
-      queuedBadge.textContent = '⏳ Queued - waiting for ChatGPT to finish...';
+      queuedBadge.textContent = UI_TEXT.QUEUED_BADGE;
       pinItem.appendChild(queuedBadge);
     }
 
@@ -234,6 +414,7 @@ function renderPins() {
       const cancelBtn = document.createElement('button');
       cancelBtn.className = 'cancel-queue-btn';
       cancelBtn.textContent = 'Cancel';
+      cancelBtn.addEventListener('click', cancelQueue);
       pinActions.appendChild(cancelBtn);
     } else {
       // Show normal use/delete buttons
@@ -252,7 +433,17 @@ function renderPins() {
       const deleteBtn = document.createElement('button');
       deleteBtn.className = 'delete-pin';
       deleteBtn.setAttribute('data-index', index);
-      deleteBtn.textContent = '×';
+      deleteBtn.textContent = UI_TEXT.DELETE_SYMBOL;
+
+      useBtn.addEventListener('click', (e) => {
+        const idx = parseInt(e.target.dataset.index);
+        usePin(idx, true);
+      });
+
+      deleteBtn.addEventListener('click', (e) => {
+        const idx = parseInt(e.target.dataset.index);
+        deletePin(idx);
+      });
 
       pinActions.appendChild(useBtn);
       pinActions.appendChild(deleteBtn);
@@ -268,27 +459,6 @@ function renderPins() {
     list.appendChild(pinItem);
   });
 
-  // Add event listeners
-  list.querySelectorAll('.use-pin').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const index = parseInt(e.target.dataset.index);
-      usePin(index, true);
-    });
-  });
-
-  list.querySelectorAll('.delete-pin').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const index = parseInt(e.target.dataset.index);
-      deletePin(index);
-    });
-  });
-
-  list.querySelectorAll('.cancel-queue-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      cancelQueue();
-    });
-  });
-
   // Add drag and drop functionality
   list.querySelectorAll('.pin-item').forEach(item => {
     item.addEventListener('dragstart', handleDragStart);
@@ -299,6 +469,10 @@ function renderPins() {
     item.addEventListener('dragend', handleDragEnd);
   });
 }
+
+// ============================================================================
+// DRAG AND DROP
+// ============================================================================
 
 let draggedElement = null;
 let draggedIndex = null;
@@ -362,6 +536,10 @@ function handleDragEnd(e) {
   draggedElement = null;
   draggedIndex = null;
 }
+
+// ============================================================================
+// PIN CREATION
+// ============================================================================
 
 // Create a new pin
 function createPin(text) {
@@ -544,35 +722,17 @@ function showCommentInput(selectedText) {
   });
 }
 
-// Helper function to detect if ChatGPT is currently generating a response
-function isChatGPTGenerating() {
-  // Method 1: Look for "Stop generating" button (most reliable)
-  const stopButton = document.querySelector('button[aria-label*="Stop"]')
-    || document.querySelector('button[aria-label*="stop"]')
-    || Array.from(document.querySelectorAll('button')).find(btn =>
-      btn.textContent.toLowerCase().includes('stop generating')
-    );
-
-  if (stopButton) return true;
-
-  // Method 2: Check if send button is disabled
-  const sendButton = document.querySelector('button[data-testid="send-button"]')
-    || document.querySelector('button[aria-label="Send prompt"]')
-    || document.querySelector('button svg[class*="icon-send"]')?.closest('button');
-
-  if (sendButton && sendButton.disabled) return true;
-
-  // Method 3: Look for streaming indicator elements
-  const streamingIndicator = document.querySelector('[data-testid="streaming-indicator"]')
-    || document.querySelector('.streaming-indicator');
-
-  if (streamingIndicator) return true;
-
-  return false;
-}
+// ============================================================================
+// PIN OPERATIONS
+// ============================================================================
 
 // Use a pin (fill the ChatGPT input)
 function usePin(index, shouldDelete = false) {
+  if (index < 0 || index >= pins.length) {
+    console.error('Invalid pin index:', index);
+    return;
+  }
+
   const pin = pins[index];
 
   // If another pin is already queued, don't allow using this pin
@@ -581,7 +741,6 @@ function usePin(index, shouldDelete = false) {
   }
 
   // Check if ChatGPT is actively generating a response
-  // Look for "Stop generating" button or similar indicators
   const isGenerating = isChatGPTGenerating();
 
   // If ChatGPT is generating, queue this pin instead
@@ -590,71 +749,9 @@ function usePin(index, shouldDelete = false) {
     return;
   }
 
-  // ChatGPT uses a contenteditable div, not a textarea
-  let inputElement = document.querySelector('#prompt-textarea');
-
-  if (!inputElement) {
-    inputElement = document.querySelector('[contenteditable="true"]');
-  }
-
-  if (inputElement) {
-
-    // Clear the input
-    inputElement.innerHTML = '';
-
-    // Check if this pin is from a different chat
-    const currentChatId = getCurrentChatId();
-    const isFromDifferentChat = pin.chatId && currentChatId && pin.chatId !== currentChatId;
-
-    if (pin.comment) {
-      // Create paragraphs with an empty one in between
-      const regardingP = document.createElement('p');
-      // Use different prefix for cross-chat pins
-      const prefix = isFromDifferentChat ? 'From another conversation' : 'Regarding';
-      regardingP.textContent = `${prefix}: "${pin.text}"`;
-      inputElement.appendChild(regardingP);
-
-      // Add empty paragraph for spacing
-      const emptyP = document.createElement('p');
-      emptyP.innerHTML = '<br>';
-      inputElement.appendChild(emptyP);
-
-      const commentP = document.createElement('p');
-      commentP.textContent = pin.comment;
-      inputElement.appendChild(commentP);
-    } else {
-      // Just the text with appropriate prefix
-      const p = document.createElement('p');
-      const prefix = isFromDifferentChat ? 'From another conversation' : 'Expand on';
-      p.textContent = `${prefix}: "${pin.text}"`;
-      inputElement.appendChild(p);
-    }
-
-    // Trigger input events
-    inputElement.dispatchEvent(new Event('input', { bubbles: true }));
-    inputElement.dispatchEvent(new Event('change', { bubbles: true }));
-
-    // Focus the element
-    inputElement.focus();
-
-    // Move cursor to end
-    const range = document.createRange();
-    const sel = window.getSelection();
-    range.selectNodeContents(inputElement);
-    range.collapse(false);
-    sel.removeAllRanges();
-    sel.addRange(range);
-
-    // Auto-submit after brief delay
-    setTimeout(() => {
-      const sendButton = document.querySelector('button[data-testid="send-button"]')
-        || document.querySelector('button[aria-label="Send prompt"]')
-        || document.querySelector('button svg[class*="icon-send"]')?.closest('button');
-
-      if (sendButton && !sendButton.disabled) {
-        sendButton.click();
-      }
-    }, 100);
+  // Fill input with pin content
+  if (fillInputWithPin(pin)) {
+    autoSubmitInput();
 
     // Delete the pin if requested
     if (shouldDelete) {
@@ -665,58 +762,16 @@ function usePin(index, shouldDelete = false) {
 
 // Queue a pin for later submission
 function queuePin(index) {
+  if (index < 0 || index >= pins.length) {
+    console.error('Invalid pin index:', index);
+    return;
+  }
+
   queuedPinIndex = index;
   const pin = pins[index];
 
   // Fill the input field
-  let inputElement = document.querySelector('#prompt-textarea');
-  if (!inputElement) {
-    inputElement = document.querySelector('[contenteditable="true"]');
-  }
-
-  if (inputElement) {
-    // Clear the input
-    inputElement.innerHTML = '';
-
-    // Check if this pin is from a different chat
-    const currentChatId = getCurrentChatId();
-    const isFromDifferentChat = pin.chatId && currentChatId && pin.chatId !== currentChatId;
-
-    if (pin.comment) {
-      const regardingP = document.createElement('p');
-      // Use different prefix for cross-chat pins
-      const prefix = isFromDifferentChat ? 'From another conversation' : 'Regarding';
-      regardingP.textContent = `${prefix}: "${pin.text}"`;
-      inputElement.appendChild(regardingP);
-
-      const emptyP = document.createElement('p');
-      emptyP.innerHTML = '<br>';
-      inputElement.appendChild(emptyP);
-
-      const commentP = document.createElement('p');
-      commentP.textContent = pin.comment;
-      inputElement.appendChild(commentP);
-    } else {
-      const p = document.createElement('p');
-      const prefix = isFromDifferentChat ? 'From another conversation' : 'Expand on';
-      p.textContent = `${prefix}: "${pin.text}"`;
-      inputElement.appendChild(p);
-    }
-
-    // Trigger input events
-    inputElement.dispatchEvent(new Event('input', { bubbles: true }));
-    inputElement.dispatchEvent(new Event('change', { bubbles: true }));
-
-    inputElement.focus();
-
-    // Move cursor to end
-    const range = document.createRange();
-    const sel = window.getSelection();
-    range.selectNodeContents(inputElement);
-    range.collapse(false);
-    sel.removeAllRanges();
-    sel.addRange(range);
-  }
+  fillInputWithPin(pin);
 
   // Update UI to show queued state
   renderPins();
@@ -731,15 +786,7 @@ function cancelQueue() {
   isWatchingForSubmit = false;
 
   // Clear the input field
-  let inputElement = document.querySelector('#prompt-textarea');
-  if (!inputElement) {
-    inputElement = document.querySelector('[contenteditable="true"]');
-  }
-
-  if (inputElement) {
-    inputElement.innerHTML = '';
-    inputElement.dispatchEvent(new Event('input', { bubbles: true }));
-  }
+  clearChatGPTInput();
 
   renderPins();
 }
@@ -765,16 +812,14 @@ function watchForChatGPTReady() {
       isWatchingForSubmit = false;
       submitQueuedPin();
     }
-  }, 500); // Check every 500ms
+  }, TIMINGS.QUEUE_CHECK_INTERVAL);
 }
 
 // Submit the queued pin
 function submitQueuedPin() {
   if (queuedPinIndex === null) return;
 
-  const sendButton = document.querySelector('button[data-testid="send-button"]')
-    || document.querySelector('button[aria-label="Send prompt"]')
-    || document.querySelector('button svg[class*="icon-send"]')?.closest('button');
+  const sendButton = getSendButton();
 
   if (sendButton && !sendButton.disabled) {
     sendButton.click();
@@ -896,11 +941,7 @@ function sendImmediately() {
   }
 
   // Find ChatGPT input
-  let inputElement = document.querySelector('#prompt-textarea');
-
-  if (!inputElement) {
-    inputElement = document.querySelector('[contenteditable="true"]');
-  }
+  const inputElement = getChatGPTInput();
 
   if (inputElement) {
     // Clear the input
@@ -908,43 +949,33 @@ function sendImmediately() {
 
     // Add the text with "Expand on:" prefix
     const p = document.createElement('p');
-    p.textContent = `Expand on: "${selectedText}"`;
+    p.textContent = `${UI_TEXT.EXPAND_PREFIX}: "${selectedText}"`;
     inputElement.appendChild(p);
 
     // Trigger input events
-    inputElement.dispatchEvent(new Event('input', { bubbles: true }));
-    inputElement.dispatchEvent(new Event('change', { bubbles: true }));
+    triggerInputEvents(inputElement);
+    moveCursorToEnd(inputElement);
 
-    // Focus the element
-    inputElement.focus();
-
-    // Move cursor to end
-    const range = document.createRange();
-    const sel = window.getSelection();
-    range.selectNodeContents(inputElement);
-    range.collapse(false);
-    sel.removeAllRanges();
-    sel.addRange(range);
-
-    // Auto-submit after brief delay
-    setTimeout(() => {
-      const sendButton = document.querySelector('button[data-testid="send-button"]')
-        || document.querySelector('button[aria-label="Send prompt"]')
-        || document.querySelector('button svg[class*="icon-send"]')?.closest('button');
-
-      if (sendButton && !sendButton.disabled) {
-        sendButton.click();
-      }
-    }, 100);
+    // Auto-submit
+    autoSubmitInput();
   }
 }
 
 // Delete a pin
 function deletePin(index) {
+  if (index < 0 || index >= pins.length) {
+    console.error('Invalid pin index:', index);
+    return;
+  }
+
   pins.splice(index, 1);
   savePins();
   renderPins();
 }
+
+// ============================================================================
+// MESSAGE HANDLING
+// ============================================================================
 
 // Listen for messages from background script
 browser.runtime.onMessage.addListener((message) => {
@@ -972,6 +1003,10 @@ browser.runtime.onMessage.addListener((message) => {
   }
 });
 
+// ============================================================================
+// CHAT CHANGE DETECTION
+// ============================================================================
+
 // Watch for URL changes (when user switches chats)
 let lastChatId = getCurrentChatId();
 
@@ -984,8 +1019,12 @@ function checkForChatChange() {
   }
 }
 
-// Check for chat changes every 500ms
-setInterval(checkForChatChange, 500);
+// Check for chat changes periodically
+setInterval(checkForChatChange, TIMINGS.CHAT_CHANGE_CHECK);
+
+// ============================================================================
+// INITIALIZATION
+// ============================================================================
 
 // Initialize when page loads
 if (document.readyState === 'loading') {

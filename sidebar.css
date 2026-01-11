@@ -25,6 +25,23 @@
   display: none;
 }
 
+#prompt-pins-sidebar.collapsed .pins-header {
+  justify-content: center;
+  width: 40px;
+  padding: 16px 0;
+  border: none;
+}
+
+#prompt-pins-sidebar.collapsed .header-buttons {
+  margin: 0;
+  padding: 0;
+}
+
+#prompt-pins-sidebar.collapsed #toggle-pins {
+  display: flex;
+  margin: 0 auto;
+}
+
 .pins-header {
   display: flex;
   justify-content: space-between;
