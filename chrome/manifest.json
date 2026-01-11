@@ -1,0 +1,59 @@
+{
+  "manifest_version": 3,
+  "name": "Prompt Pins for ChatGPT",
+  "version": "1.1.1",
+  "description": "Save questions for later without breaking conversational flow. All data stored locally - nothing leaves your browser.",
+
+  "permissions": [
+    "storage",
+    "contextMenus"
+  ],
+
+  "host_permissions": [
+    "*://chat.openai.com/*",
+    "*://chatgpt.com/*"
+  ],
+
+  "background": {
+    "service_worker": "background.js"
+  },
+
+  "content_scripts": [
+    {
+      "matches": [
+        "*://chat.openai.com/*",
+        "*://chatgpt.com/*"
+      ],
+      "js": ["content.js"],
+      "css": ["sidebar.css"],
+      "run_at": "document_end"
+    }
+  ],
+
+  "commands": {
+    "create-pin": {
+      "suggested_key": {
+        "default": "Ctrl+Alt+P"
+      },
+      "description": "Create a pin from selected text"
+    },
+    "send-immediately": {
+      "suggested_key": {
+        "default": "Ctrl+Alt+S"
+      },
+      "description": "Send selected text immediately (no pin)"
+    },
+    "use-next-pin": {
+      "suggested_key": {
+        "default": "Ctrl+Alt+N"
+      },
+      "description": "Use the next pin in queue"
+    }
+  },
+
+  "icons": {
+    "48": "icons/icon48.png",
+    "96": "icons/icon96.png",
+    "128": "icons/icon128.png"
+  }
+}

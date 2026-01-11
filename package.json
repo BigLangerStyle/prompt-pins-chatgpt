@@ -1,12 +1,14 @@
 {
   "name": "prompt-pins-chatgpt",
   "version": "1.1.1",
-  "description": "Firefox extension to save ChatGPT questions for later without breaking conversational flow",
+  "description": "Browser extension to save ChatGPT questions for later without breaking conversational flow",
   "scripts": {
-    "dev": "web-ext run",
-    "build": "web-ext build --overwrite-dest",
-    "lint": "web-ext lint",
-    "start": "web-ext run"
+    "build:firefox": "node scripts/build-firefox.js",
+    "build:chrome": "node scripts/build-chrome.js",
+    "build:all": "npm run build:firefox && npm run build:chrome",
+    "dev:firefox": "cd firefox && web-ext run",
+    "dev:chrome": "npm run build:chrome && echo Load build/chrome in Chrome via chrome://extensions",
+    "clean": "node scripts/clean.js"
   },
   "repository": {
     "type": "git",
@@ -14,6 +16,7 @@
   },
   "keywords": [
     "firefox",
+    "chrome",
     "extension",
     "chatgpt",
     "productivity"
