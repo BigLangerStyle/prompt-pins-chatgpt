@@ -61,7 +61,7 @@ If you try to use a pin while ChatGPT is generating a response, the extension
 intelligently handles this:
 
 1. **Automatic Queuing**: The pin enters a queued state instead of failing
-2. **Visual Feedback**: Shows "⏳ Queued - waiting for ChatGPT to finish..."
+2. **Visual Feedback**: Shows "â³ Queued - waiting for ChatGPT to finish..."
    badge
 3. **Other Pins Disabled**: All other "Use" buttons become disabled while a
    pin is queued
@@ -147,7 +147,7 @@ If you want to modify the code or contribute:
 ### Managing Your Pins
 
 - **Reorder**: Drag and drop pins to organize them
-- **Delete**: Click the × button to remove a pin
+- **Delete**: Click the Ã— button to remove a pin
 - **Clear All**: Click "Clear" button to remove all pins (with confirmation)
 - **Collapse**: Click the - button to hide the sidebar
 - **Cancel Queue**: If a pin is queued, click "Cancel" to abort
@@ -204,6 +204,13 @@ MIT License - see [LICENSE](LICENSE) file for details
 Copyright (c) 2025 Prompt Pins Contributors
 
 ## Version History
+
+### 1.1.1 (January 11, 2025)
+
+- **CRITICAL FIX:** Context menu "Pin prompt" now appears reliably after browser restart
+- **FIXED:** Added browser startup listener to recreate context menu when Firefox starts
+- **FIXED:** Firefox minimum version set to 142.0 (supports data_collection_permissions on both desktop and Android)
+- **IMPROVED:** Better error handling and logging for debugging
 
 ### 1.1.0 (January 11, 2025)
 

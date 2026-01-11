@@ -5,6 +5,21 @@ All notable changes to Prompt Pins for ChatGPT will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2025-01-11
+
+### Fixed
+- **CRITICAL:** Context menu "Pin prompt" now appears reliably after browser restart
+  - Added `browser.runtime.onStartup` listener to recreate context menu on browser startup
+  - Previously, context menu would disappear after closing and reopening Firefox
+  - Added context menu cleanup to prevent duplicate menu items
+- Improved error handling and logging for context menu creation
+- Fixed `strict_min_version` in manifest to "142.0" (supports data_collection_permissions on both desktop and Android)
+
+### Technical
+- Background script now uses helper function `createContextMenu()` for better maintainability
+- Added console logging with "Prompt Pins:" prefix for easier debugging
+- Context menus now properly removed before recreation to prevent ID conflicts
+
 ## [1.1.0] - 2025-01-11
 
 ### Added
@@ -28,8 +43,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added input validation and error handling
 
 ### Fixed
-- Collapsed sidebar toggle button now properly centered and visible
-- Character encoding issues with special symbols (× and ⏳)
+- Collapsed sidebar button now properly centered and visible
+- Character encoding issues with special symbols (Ã— and â³)
 - Removed trailing whitespace and debug console.log statements
 
 ### Technical
@@ -67,5 +82,6 @@ This project uses [Semantic Versioning](https://semver.org/):
 - **MINOR** version for added functionality in a backward compatible manner
 - **PATCH** version for backward compatible bug fixes
 
+[1.1.1]: https://github.com/BigLangerStyle/prompt-pins-chatgpt/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/BigLangerStyle/prompt-pins-chatgpt/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/BigLangerStyle/prompt-pins-chatgpt/releases/tag/v1.0.0

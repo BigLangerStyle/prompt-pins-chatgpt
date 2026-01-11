@@ -1,6 +1,6 @@
 {
   "name": "prompt-pins-chatgpt",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Firefox extension to save ChatGPT questions for later without breaking conversational flow",
   "scripts": {
     "dev": "web-ext run",
