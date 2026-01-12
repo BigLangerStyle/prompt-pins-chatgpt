@@ -212,19 +212,19 @@ prompt-pins-chatgpt/
 
 Right-click on selected text and choose "Pin prompt" from the context menu:
 
-![Context Menu](screenshots/screenshot-context-menu.png)
+![Context Menu](screenshots/screenshot-context-menu-chrome.png)
 
 ### Pin Creation Dialog
 
 Add optional notes or comments to your pin:
 
-![Create Pin Dialog](screenshots/screenshot-create-pin-dialog.png)
+![Create Pin Dialog](screenshots/screenshot-create-pin-dialog-chrome.png)
 
 ### Pin Management Sidebar
 
 View and manage all your saved pins in the sidebar:
 
-![Sidebar with Pins](screenshots/screenshot-sidebar-pins.png)
+![Sidebar with Pins](screenshots/screenshot-sidebar-pins-chrome.png)
 
 ## Contributing
 
