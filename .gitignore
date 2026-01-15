@@ -49,3 +49,7 @@ yarn-error.log
 # *.psd
 # *.ai
 # *.sketch
+
+# Agent files
+.agent/
+

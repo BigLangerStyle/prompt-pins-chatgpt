@@ -20,6 +20,11 @@ A browser extension for Firefox and Chrome that lets you save questions and prom
 - **Firefox**: Full support (Manifest V2)
 - **Chrome/Edge**: Full support (Manifest V3)
 
+## Known Issues
+
+- ⚠️ **Chrome/Edge Keyboard Shortcuts**: Shortcuts like `Ctrl+Shift+P` are currently non-functional in the Chrome/Edge version. This is a known issue being investigated.
+
+
 ## Installation
 
 ### From Browser Extension Stores (Recommended)
