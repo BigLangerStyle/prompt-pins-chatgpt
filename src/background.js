@@ -47,13 +47,22 @@ browser.contextMenus.onClicked.addListener((info, tab) => {
 
 // Handle keyboard shortcuts
 browser.commands.onCommand.addListener((command) => {
+  console.log("Prompt Pins: Keyboard command received:", command);
+  
   browser.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
     if (tabs[0]) {
+      console.log("Prompt Pins: Sending command to tab:", tabs[0].id);
       browser.tabs.sendMessage(tabs[0].id, {
         action: command
+      }).then((response) => {
+        console.log("Prompt Pins: Command response:", response);
       }).catch((error) => {
         console.error("Prompt Pins: Failed to send command to content script:", error);
       });
+    } else {
+      console.error("Prompt Pins: No active tab found");
     }
+  }).catch((error) => {
+    console.error("Prompt Pins: Failed to query tabs:", error);
   });
 });
