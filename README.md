@@ -22,7 +22,9 @@ A browser extension for Firefox and Chrome that lets you save questions and prom
 
 ## Known Issues
 
-- ⚠️ **Chrome/Edge Keyboard Shortcuts**: Shortcuts like `Ctrl+Shift+P` are currently non-functional in the Chrome/Edge version. This is a known issue being investigated.
+- ⚠️ **Chrome/Edge Keyboard Shortcuts**: Shortcuts like `Ctrl+Shift+P`, `Ctrl+Shift+S`, and `Ctrl+Shift+N` are currently non-functional in the Chrome/Edge version. This is a known issue being investigated.
+- 🐛 **Double Panel (Chrome)**: Two sidebar panels may appear in Chrome. Minimizing one reveals another behind it.
+- 🐛 **Login Layout Issue**: The sidebar covers the "Log in" button when not logged in. The sidebar should automatically minimize when the login screen is detected.
 
 
 ## Installation
@@ -35,7 +37,9 @@ A browser extension for Firefox and Chrome that lets you save questions and prom
 3. Visit [ChatGPT](https://chatgpt.com) and start using Prompt Pins!
 
 **Chrome/Edge:**
-_Coming soon to Chrome Web Store_
+1. Visit the Chrome Web Store (link coming soon)
+2. Click "Add to Chrome" or "Get" (for Edge)
+3. Visit [ChatGPT](https://chatgpt.com) and start using Prompt Pins!
 
 ### From Source (for developers)
 
