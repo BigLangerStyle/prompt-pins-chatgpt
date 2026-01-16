@@ -979,25 +979,34 @@ function deletePin(index) {
 
 // Listen for messages from background script
 browser.runtime.onMessage.addListener((message) => {
+  console.log("Prompt Pins: Message received in content script:", message);
+  
   if (message.action === 'createPin') {
     // Context menu: create pin from selected text
     createPin(message.selectedText);
     return Promise.resolve({success: true});
   } else if (message.action === 'create-pin') {
-    // Keyboard shortcut: Ctrl+Alt+P - create pin from current selection
+    // Keyboard shortcut: Ctrl+Shift+K - create pin from current selection
+    console.log("Prompt Pins: Create pin shortcut triggered");
     const selectedText = getSelectedText();
     if (selectedText) {
       createPin(selectedText);
+    } else {
+      console.log("Prompt Pins: No text selected");
     }
     return Promise.resolve({success: true});
   } else if (message.action === 'send-immediately') {
-    // Keyboard shortcut: Ctrl+Alt+S - send selected text immediately
+    // Keyboard shortcut: Ctrl+Shift+L - send selected text immediately
+    console.log("Prompt Pins: Send immediately shortcut triggered");
     sendImmediately();
     return Promise.resolve({success: true});
   } else if (message.action === 'use-next-pin') {
-    // Keyboard shortcut: Ctrl+Alt+N - use next pin
+    // Keyboard shortcut: Ctrl+Shift+U - use next pin
+    console.log("Prompt Pins: Use next pin shortcut triggered");
     if (pins.length > 0) {
       usePin(0, true);
+    } else {
+      console.log("Prompt Pins: No pins available");
     }
     return Promise.resolve({success: true});
   }

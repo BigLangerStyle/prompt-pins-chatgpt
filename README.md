@@ -89,11 +89,11 @@ A browser extension for Firefox and Chrome that lets you save questions and prom
 
 ### Chrome/Edge Shortcuts
 
-- **`Ctrl+Shift+P`** (or `Cmd+Shift+P` on Mac) - Create a pin from selected text
-- **`Ctrl+Shift+S`** (or `Cmd+Shift+S` on Mac) - Send selected text immediately with "Expand on:" prefix
-- **`Ctrl+Shift+N`** (or `Cmd+Shift+N` on Mac) - Use the next pin in queue
+- **`Ctrl+Shift+K`** (or `Cmd+Shift+K` on Mac) - Create a pin from selected text
+- **`Ctrl+Shift+L`** (or `Cmd+Shift+L` on Mac) - Send selected text immediately with "Expand on:" prefix
+- **`Ctrl+Shift+U`** (or `Cmd+Shift+U` on Mac) - Use the next pin in queue
 
-> **Note:** Chrome doesn't support `Ctrl+Alt` shortcuts, so Chrome/Edge uses `Ctrl+Shift` instead.
+> **Note:** Chrome has conflicts with some shortcuts (Ctrl+Shift+P opens Dev Tools command palette, Ctrl+Shift+N opens Incognito, Ctrl+Shift+J opens Console), so Chrome/Edge uses K, L, U keys instead of P, S, N.
 
 ### Customizing Shortcuts
 
@@ -249,6 +249,22 @@ MIT License - see [LICENSE](LICENSE) file for details
 Copyright (c) 2025 Prompt Pins Contributors
 
 ## Version History
+
+### 1.2.0 (January 16, 2025)
+
+- **CRITICAL FIX:** Chrome/Edge keyboard shortcuts now working
+  - Changed to non-conflicting keys: Ctrl+Shift+K/L/U (was P/S/N)
+  - Ctrl+Shift+P conflicted with Chrome Dev Tools Command Palette
+  - Ctrl+Shift+N conflicted with Chrome's "New Incognito Window"
+  - Ctrl+Shift+J conflicted with Chrome's "Open Console"
+- **NEW:** Added explicit Mac keyboard shortcuts to both browsers
+  - Firefox: Cmd+Alt+P/S/N on Mac
+  - Chrome/Edge: Cmd+Shift+K/L/U on Mac
+- **IMPROVED:** Comprehensive logging for debugging keyboard shortcuts
+  - Track command flow from background to content script
+  - Detailed console output at each step
+  - Better error messages for troubleshooting
+- **IMPROVED:** Enhanced error handling in command pipeline
 
 ### 1.1.1 (January 11, 2025)
 
