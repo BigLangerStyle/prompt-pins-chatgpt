@@ -32,12 +32,12 @@ A browser extension for Firefox and Chrome that lets you save questions and prom
 ### From Browser Extension Stores (Recommended)
 
 **Firefox:**
-1. Visit the [Firefox Add-ons page](https://addons.mozilla.org/firefox/addon/prompt-pins-for-chatgpt/)
+1. Visit the [Firefox Add-ons page](https://addons.mozilla.org/en-US/firefox/addon/prompt-pins-for-chatgpt/)
 2. Click "Add to Firefox"
 3. Visit [ChatGPT](https://chatgpt.com) and start using Prompt Pins!
 
 **Chrome/Edge:**
-1. Visit the Chrome Web Store (link coming soon)
+1. Visit the [Chrome Web Store page](https://chromewebstore.google.com/detail/prompt-pins-for-chatgpt/jnackadbafdgahcamdegljmjckfnppoi)
 2. Click "Add to Chrome" or "Get" (for Edge)
 3. Visit [ChatGPT](https://chatgpt.com) and start using Prompt Pins!
 
