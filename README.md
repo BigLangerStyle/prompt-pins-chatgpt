@@ -14,6 +14,7 @@ A browser extension for Firefox and Chrome that lets you save questions and prom
 - **Persistent Storage**: Pins are saved locally and persist across browser sessions
 - **Dark Theme**: Matches ChatGPT's interface with a clean, modern design
 - **Auto-Submit**: Automatically submits prompts when you click "Use" or "Next Pin"
+- **Branded Minimize Button**: Prompt Pins icon on the minimized sidebar for easy access and brand recognition
 
 ## Browser Support
 
@@ -260,6 +261,8 @@ Copyright (c) 2025 Prompt Pins Contributors
 - **NEW:** Added explicit Mac keyboard shortcuts to both browsers
   - Firefox: Cmd+Alt+P/S/N on Mac
   - Chrome/Edge: Cmd+Shift+K/L/U on Mac
+- **NEW:** Branded minimize button - Replaced generic "+" with Prompt Pins icon for better brand recognition
+- **NEW:** Edit existing pins - Click edit button to modify pin text and comments
 - **IMPROVED:** Comprehensive logging for debugging keyboard shortcuts
   - Track command flow from background to content script
   - Detailed console output at each step
