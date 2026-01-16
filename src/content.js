@@ -217,6 +217,12 @@ function clearChatGPTInput() {
 
 // Create and inject the sidebar
 function createSidebar() {
+  // Check if sidebar already exists (prevent duplicate creation)
+  if (document.getElementById('prompt-pins-sidebar')) {
+    console.log('Prompt Pins: Sidebar already exists, skipping creation');
+    return;
+  }
+
   const sidebar = document.createElement('div');
   sidebar.id = 'prompt-pins-sidebar';
 
@@ -1035,9 +1041,47 @@ setInterval(checkForChatChange, TIMINGS.CHAT_CHANGE_CHECK);
 // INITIALIZATION
 // ============================================================================
 
+// Initialize or reconnect to existing sidebar
+function initializeSidebar() {
+  // Check if sidebar already exists
+  const existingSidebar = document.getElementById('prompt-pins-sidebar');
+  
+  if (existingSidebar) {
+    console.log('Prompt Pins: Reconnecting to existing sidebar');
+    
+    // Reconnect to cached elements
+    cachedElements.sidebar = existingSidebar;
+    cachedElements.pinsList = document.getElementById('pins-list');
+    cachedElements.nextBtn = document.getElementById('next-pin');
+    cachedElements.clearBtn = document.getElementById('clear-all-pins');
+    cachedElements.toggleBtn = document.getElementById('toggle-pins');
+    
+    // Reattach event listeners (in case they were lost)
+    if (cachedElements.toggleBtn) {
+      cachedElements.toggleBtn.addEventListener('click', toggleSidebar);
+    }
+    if (cachedElements.clearBtn) {
+      cachedElements.clearBtn.addEventListener('click', confirmClearAll);
+    }
+    if (cachedElements.nextBtn) {
+      cachedElements.nextBtn.addEventListener('click', () => {
+        if (pins.length > 0) {
+          usePin(0, true);
+        }
+      });
+    }
+    
+    // Load and render pins
+    loadPins();
+  } else {
+    // Create new sidebar
+    createSidebar();
+  }
+}
+
 // Initialize when page loads
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', createSidebar);
+  document.addEventListener('DOMContentLoaded', initializeSidebar);
 } else {
-  createSidebar();
+  initializeSidebar();
 }

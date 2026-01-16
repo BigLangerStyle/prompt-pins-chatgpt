@@ -5,6 +5,21 @@ All notable changes to Prompt Pins for ChatGPT will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2025-01-16
+
+### Fixed
+- **Chrome double panel issue** - Fixed bug where two sidebar panels would appear in Chrome
+  - Added duplicate prevention check in `createSidebar()` function
+  - Created `initializeSidebar()` function to intelligently handle sidebar creation and reconnection
+  - Sidebar now properly reconnects when content script is re-injected (page navigation, refresh, service worker restart)
+  - Event listeners are reattached automatically when reconnecting to existing sidebar
+  - Added console logging for debugging sidebar lifecycle
+
+### Technical
+- Improved content script initialization to handle Chrome Manifest V3 service worker lifecycle
+- Added defensive coding to prevent multiple sidebar instances
+- Enhanced state management for better reliability across page navigations
+
 ## [1.1.1] - 2025-01-11
 
 ### Fixed
@@ -100,6 +115,7 @@ This project uses [Semantic Versioning](https://semver.org/):
 - **MINOR** version for added functionality in a backward compatible manner
 - **PATCH** version for backward compatible bug fixes
 
+[1.2.0]: https://github.com/BigLangerStyle/prompt-pins-chatgpt/compare/v1.1.1...v1.2.0
 [1.1.1]: https://github.com/BigLangerStyle/prompt-pins-chatgpt/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/BigLangerStyle/prompt-pins-chatgpt/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/BigLangerStyle/prompt-pins-chatgpt/releases/tag/v1.0.0
