@@ -266,6 +266,8 @@ Copyright (c) 2025 Prompt Pins Contributors
   - Automatically scrolls to show new pin if off-screen
   - Smooth, non-disruptive effect that doesn't interfere with drag-and-drop
   - Works with all pin creation methods (context menu, keyboard shortcuts)
+  - Robust timeout tracking prevents interruption during rapid user actions
+  - Proper cleanup prevents memory leaks
 - **CRITICAL FIX:** Chrome/Edge keyboard shortcuts now working
   - Changed to non-conflicting keys: Ctrl+Shift+K/L/U (was P/S/N)
   - Ctrl+Shift+P conflicted with Chrome Dev Tools Command Palette

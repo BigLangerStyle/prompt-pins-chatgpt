@@ -455,5 +455,6 @@
 
 .pin-item.newly-created {
   animation: pin-highlight 1.5s ease-out;
+  transition: none;
   border-color: #10a37f;
 }
