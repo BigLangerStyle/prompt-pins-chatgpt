@@ -253,11 +253,16 @@ Copyright (c) 2025 Prompt Pins Contributors
 
 ### 1.2.0 (January 16, 2025)
 
-**In Progress - Not Yet Released:**
-- Smart scroll after submission - Auto-scroll to show submitted prompt with input box
-- Fix double panel issue (Chrome)
-- Fix login button coverage (both browsers)
+**In Progress - Not Yet Released (Implementation Order):**
 
+1. Remember sidebar state - Persist expanded/collapsed state across sessions and chats (FOUNDATION)
+2. Fix login button coverage - Auto-minimize when "Log in" button detected, auto-expand after successful login (DEPENDS ON #1)
+3. Pin highlight animation - Brief highlight on newly created pins for visual feedback (STANDALONE)
+4. Auto-collapse behavior - When sidebar collapsed and pin created via context menu/keyboard, briefly expand → highlight → auto-collapse (DEPENDS ON #1, #3)
+5. New Pin button - Create pins manually from sidebar without highlighting text (DEPENDS ON #3)
+6. Edit existing pins - Click edit button to modify pin text and comments (STANDALONE)
+7. Smart scroll after submission - Auto-scroll to show submitted prompt with input box visible (POLISH)
+8. Fix double panel issue (Chrome) (BUGFIX)
 **Completed:**
 
 - **CRITICAL FIX:** Chrome/Edge keyboard shortcuts now working

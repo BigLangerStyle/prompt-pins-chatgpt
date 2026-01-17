@@ -36,7 +36,7 @@ const UI_TEXT = {
 // ============================================================================
 
 let pins = [];
-let sidebarOpen = true;
+let sidebarOpen = true; // Default to open, will be overridden by saved state
 let queuedPinIndex = null;
 let isWatchingForSubmit = false;
 
@@ -291,6 +291,12 @@ function createSidebar() {
     }
   });
 
+  // Apply saved sidebar state
+  if (!sidebarOpen) {
+    sidebar.classList.add('collapsed');
+    toggleBtn.textContent = '+';
+  }
+
   // Load saved pins
   loadPins();
 }
@@ -307,6 +313,9 @@ function toggleSidebar() {
     sidebar.classList.add('collapsed');
     toggle.textContent = '+';
   }
+  
+  // Save sidebar state to storage
+  saveSidebarState();
 }
 
 // ============================================================================
@@ -323,6 +332,22 @@ async function loadPins() {
 // Save pins to storage
 async function savePins() {
   await browser.storage.local.set({ pins });
+}
+
+// ============================================================================
+// SIDEBAR STATE STORAGE
+// ============================================================================
+
+// Load sidebar state from storage
+async function loadSidebarState() {
+  const result = await browser.storage.local.get('sidebarOpen');
+  // If no saved state exists, default to true (open)
+  sidebarOpen = result.sidebarOpen !== undefined ? result.sidebarOpen : true;
+}
+
+// Save sidebar state to storage
+async function saveSidebarState() {
+  await browser.storage.local.set({ sidebarOpen });
 }
 
 // ============================================================================
@@ -1042,7 +1067,10 @@ setInterval(checkForChatChange, TIMINGS.CHAT_CHANGE_CHECK);
 // ============================================================================
 
 // Initialize or reconnect to existing sidebar
-function initializeSidebar() {
+async function initializeSidebar() {
+  // Load saved sidebar state first
+  await loadSidebarState();
+  
   // Check if sidebar already exists
   const existingSidebar = document.getElementById('prompt-pins-sidebar');
   
@@ -1055,6 +1083,19 @@ function initializeSidebar() {
     cachedElements.nextBtn = document.getElementById('next-pin');
     cachedElements.clearBtn = document.getElementById('clear-all-pins');
     cachedElements.toggleBtn = document.getElementById('toggle-pins');
+    
+    // Apply saved sidebar state to existing sidebar
+    if (!sidebarOpen) {
+      existingSidebar.classList.add('collapsed');
+      if (cachedElements.toggleBtn) {
+        cachedElements.toggleBtn.textContent = '+';
+      }
+    } else {
+      existingSidebar.classList.remove('collapsed');
+      if (cachedElements.toggleBtn) {
+        cachedElements.toggleBtn.textContent = '-';
+      }
+    }
     
     // Reattach event listeners (in case they were lost)
     if (cachedElements.toggleBtn) {
