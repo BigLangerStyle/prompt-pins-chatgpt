@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.2.0] - 2025-01-16
 
+### Added
+- **Remember sidebar state** - Sidebar now remembers whether it was expanded or collapsed across browser sessions
+  - State is saved automatically when toggling the sidebar
+  - State persists across page refreshes, navigation, and browser restarts
+  - Works globally across all ChatGPT chats and tabs
+  - No flickering or visual state changes during page load
+
 ### Fixed
 - **Chrome double panel issue** - Fixed bug where two sidebar panels would appear in Chrome
   - Added duplicate prevention check in `createSidebar()` function
@@ -16,6 +23,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added console logging for debugging sidebar lifecycle
 
 ### Technical
+- Added `loadSidebarState()` and `saveSidebarState()` functions for state persistence
+- Modified `toggleSidebar()` to automatically save state changes
+- Updated `createSidebar()` to apply saved state when creating new sidebar
+- Updated `initializeSidebar()` to load and apply saved state when reconnecting to existing sidebar
+- Sidebar state stored in browser.storage.local alongside pins data
 - Improved content script initialization to handle Chrome Manifest V3 service worker lifecycle
 - Added defensive coding to prevent multiple sidebar instances
 - Enhanced state management for better reliability across page navigations
