@@ -253,6 +253,13 @@ Copyright (c) 2025 Prompt Pins Contributors
 
 ### 1.2.0 (January 16, 2025)
 
+**In Progress - Not Yet Released:**
+- Smart scroll after submission - Auto-scroll to show submitted prompt with input box
+- Fix double panel issue (Chrome)
+- Fix login button coverage (both browsers)
+
+**Completed:**
+
 - **CRITICAL FIX:** Chrome/Edge keyboard shortcuts now working
   - Changed to non-conflicting keys: Ctrl+Shift+K/L/U (was P/S/N)
   - Ctrl+Shift+P conflicted with Chrome Dev Tools Command Palette
