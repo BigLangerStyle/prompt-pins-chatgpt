@@ -633,6 +633,43 @@ function renderPins() {
   });
 }
 
+// Highlight a newly created pin with animation
+function highlightNewPin(index) {
+  const pinsList = cachedElements.pinsList;
+  if (!pinsList) return;
+  
+  const pinItems = pinsList.querySelectorAll('.pin-item');
+  const newPinElement = pinItems[index];
+  
+  if (newPinElement) {
+    // Add highlight class
+    newPinElement.classList.add('newly-created');
+    
+    // Check if pin is visible in the viewport
+    const listRect = pinsList.getBoundingClientRect();
+    const pinRect = newPinElement.getBoundingClientRect();
+    
+    // Only scroll if the pin is not fully visible
+    const isFullyVisible = (
+      pinRect.top >= listRect.top &&
+      pinRect.bottom <= listRect.bottom
+    );
+    
+    if (!isFullyVisible) {
+      // Scroll into view smoothly (only when needed)
+      newPinElement.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'nearest' 
+      });
+    }
+    
+    // Remove class after animation completes
+    setTimeout(() => {
+      newPinElement.classList.remove('newly-created');
+    }, 1500);
+  }
+}
+
 // ============================================================================
 // DRAG AND DROP
 // ============================================================================
@@ -863,6 +900,11 @@ function showCommentInput(selectedText) {
 
     savePins();
     renderPins();
+    
+    // Highlight the newly created pin
+    const newPinIndex = pins.length - 1;
+    highlightNewPin(newPinIndex);
+    
     cleanup();
     inputContainer.remove();
   });

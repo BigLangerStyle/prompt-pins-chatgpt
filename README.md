@@ -5,6 +5,7 @@ A browser extension for Firefox and Chrome that lets you save questions and prom
 ## Features
 
 - **Pin Any Text**: Highlight text in a ChatGPT conversation and right-click to pin it
+- **Visual Feedback**: Newly created pins show a subtle highlight animation for confirmation
 - **Keyboard Shortcuts**: Use hotkeys for quick pin creation and usage
 - **Smart Queue System**: Automatically queues pins if ChatGPT is busy, submits when ready
 - **Add Context**: Optionally add a note or comment to each pin
@@ -260,6 +261,11 @@ Copyright (c) 2025 Prompt Pins Contributors
   - Runs real-time watcher to detect login state changes
   - Preserves user's sidebar preference across login/logout
 
+- **NEW:** Pin highlight animation - Visual feedback when creating new pins
+  - Subtle glow and scale pulse animation (1.5 seconds)
+  - Automatically scrolls to show new pin if off-screen
+  - Smooth, non-disruptive effect that doesn't interfere with drag-and-drop
+  - Works with all pin creation methods (context menu, keyboard shortcuts)
 - **CRITICAL FIX:** Chrome/Edge keyboard shortcuts now working
   - Changed to non-conflicting keys: Ctrl+Shift+K/L/U (was P/S/N)
   - Ctrl+Shift+P conflicted with Chrome Dev Tools Command Palette
