@@ -155,6 +155,129 @@ function isChatGPTGenerating() {
 }
 
 // ============================================================================
+// HELPER FUNCTIONS - LOGIN STATE DETECTION
+// ============================================================================
+
+// Check if user is on the login page
+function isLoginPage() {
+  // Method 1: Check for user account indicator (most reliable for new UI)
+  // When logged in, there should be user menu/profile elements
+  const hasUserMenu = document.querySelector('[data-headlessui-state]') !== null ||
+                      document.querySelector('button[aria-label*="User"]') !== null ||
+                      document.querySelector('[class*="avatar"]') !== null;
+  
+  // Method 2: Check if there's a visible "Log in" button
+  const buttons = Array.from(document.querySelectorAll('button, a'));
+  const hasLoginButton = buttons.some(btn => {
+    const text = btn.textContent.toLowerCase();
+    return text.includes('log in') || text.includes('sign in') || text === 'login';
+  });
+  
+  // Method 3: Check URL - if we have a chat ID, definitely logged in
+  const hasChatId = getCurrentChatId() !== null;
+  
+  // Method 4: Check for elements that only appear when logged in
+  const hasSidebar = document.querySelector('nav') !== null;
+  const hasChatHistory = document.querySelector('[class*="chat"]') !== null;
+  
+  // Consider it a login page if:
+  // - No user menu/avatar (not logged in) OR
+  // - Has explicit login button OR
+  // - (No chat ID AND (no sidebar OR has login button))
+  const notLoggedIn = !hasUserMenu || hasLoginButton || (!hasChatId && !hasSidebar);
+  
+  console.log('Prompt Pins: Login detection -', {
+    hasUserMenu,
+    hasLoginButton,
+    hasChatId,
+    hasSidebar,
+    isLoginPage: notLoggedIn
+  });
+  
+  return notLoggedIn;
+}
+
+// Auto-collapse sidebar when on login page, restore state when logged in
+function handleLoginStateChange() {
+  const isOnLoginPage = isLoginPage();
+  const sidebar = cachedElements.sidebar;
+  const toggle = cachedElements.toggleBtn;
+  
+  if (!sidebar || !toggle) return;
+  
+  if (isOnLoginPage) {
+    // On login page - collapse sidebar if not already collapsed
+    // BUT respect if user manually expanded it (manual override)
+    if (!sidebar.classList.contains('collapsed') && !manualOverrideOnLogin) {
+      console.log('Prompt Pins: Login page detected, auto-collapsing sidebar');
+      
+      // Save user's preference before we change it
+      savedPreferenceBeforeLogin = sidebarOpen;
+      
+      // Collapse the sidebar (both visually and state)
+      sidebar.classList.add('collapsed');
+      toggle.textContent = '+';
+      sidebarOpen = false; // Update state to match visual
+      wasOnLoginPage = true;
+    }
+  } else {
+    // Logged in - restore saved sidebar state only if we previously collapsed it for login
+    if (wasOnLoginPage && savedPreferenceBeforeLogin !== null) {
+      console.log('Prompt Pins: User logged in, restoring sidebar to saved preference:', savedPreferenceBeforeLogin);
+      
+      // Restore user's original preference
+      if (savedPreferenceBeforeLogin) {
+        sidebar.classList.remove('collapsed');
+        toggle.textContent = '-';
+        sidebarOpen = true;
+      } else {
+        // User's preference was collapsed, keep it that way
+        sidebar.classList.add('collapsed');
+        toggle.textContent = '+';
+        sidebarOpen = false;
+      }
+      
+      // Save the restored preference
+      saveSidebarState();
+      
+      // Reset flags
+      wasOnLoginPage = false;
+      manualOverrideOnLogin = false;
+      savedPreferenceBeforeLogin = null;
+    }
+  }
+}
+
+// Watch for login state changes
+let loginStateCheckInterval = null;
+let wasOnLoginPage = false; // Track previous login page state
+let manualOverrideOnLogin = false; // Track if user manually expanded on login page
+let savedPreferenceBeforeLogin = null; // Store user's preference before auto-collapse
+
+function startLoginStateWatcher() {
+  // Check immediately
+  handleLoginStateChange();
+  
+  // Then check periodically
+  if (loginStateCheckInterval) {
+    clearInterval(loginStateCheckInterval);
+  }
+  
+  loginStateCheckInterval = setInterval(() => {
+    handleLoginStateChange();
+  }, 1000); // Check every second
+}
+
+function stopLoginStateWatcher() {
+  if (loginStateCheckInterval) {
+    clearInterval(loginStateCheckInterval);
+    loginStateCheckInterval = null;
+  }
+  wasOnLoginPage = false;
+  manualOverrideOnLogin = false;
+  savedPreferenceBeforeLogin = null;
+}
+
 // HELPER FUNCTIONS - PIN OPERATIONS
 // ============================================================================
 
@@ -309,9 +432,18 @@ function toggleSidebar() {
   if (sidebarOpen) {
     sidebar.classList.remove('collapsed');
     toggle.textContent = '-';
+    
+    // If user manually expands on login page, set override flag
+    if (isLoginPage()) {
+      manualOverrideOnLogin = true;
+      console.log('Prompt Pins: User manually expanded sidebar on login page');
+    }
   } else {
     sidebar.classList.add('collapsed');
     toggle.textContent = '+';
+    
+    // If user manually collapses, clear override flag
+    manualOverrideOnLogin = false;
   }
   
   // Save sidebar state to storage
@@ -1118,6 +1250,9 @@ async function initializeSidebar() {
     // Create new sidebar
     createSidebar();
   }
+  
+  // Start login state watcher
+  startLoginStateWatcher();
 }
 
 // Initialize when page loads

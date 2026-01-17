@@ -25,7 +25,6 @@ A browser extension for Firefox and Chrome that lets you save questions and prom
 
 - ⚠️ **Chrome/Edge Keyboard Shortcuts**: Shortcuts like `Ctrl+Shift+P`, `Ctrl+Shift+S`, and `Ctrl+Shift+N` are currently non-functional in the Chrome/Edge version. This is a known issue being investigated.
 - 🐛 **Double Panel (Chrome)**: Two sidebar panels may appear in Chrome. Minimizing one reveals another behind it.
-- 🐛 **Login Layout Issue**: The sidebar covers the "Log in" button when not logged in. The sidebar should automatically minimize when the login screen is detected.
 
 
 ## Installation
@@ -251,19 +250,15 @@ Copyright (c) 2025 Prompt Pins Contributors
 
 ## Version History
 
-### 1.2.0 (January 16, 2025)
+### 1.2.0 (January 17, 2025)
 
-**In Progress - Not Yet Released (Implementation Order):**
-
-1. Remember sidebar state - Persist expanded/collapsed state across sessions and chats (FOUNDATION)
-2. Fix login button coverage - Auto-minimize when "Log in" button detected, auto-expand after successful login (DEPENDS ON #1)
-3. Pin highlight animation - Brief highlight on newly created pins for visual feedback (STANDALONE)
-4. Auto-collapse behavior - When sidebar collapsed and pin created via context menu/keyboard, briefly expand → highlight → auto-collapse (DEPENDS ON #1, #3)
-5. New Pin button - Create pins manually from sidebar without highlighting text (DEPENDS ON #3)
-6. Edit existing pins - Click edit button to modify pin text and comments (STANDALONE)
-7. Smart scroll after submission - Auto-scroll to show submitted prompt with input box visible (POLISH)
-8. Fix double panel issue (Chrome) (BUGFIX)
 **Completed:**
+
+- **CRITICAL FIX:** Login button coverage issue resolved
+  - Sidebar automatically collapses when login page is detected
+  - Automatically restores user's saved sidebar state after successful login
+  - Runs real-time watcher to detect login state changes
+  - Preserves user's sidebar preference across login/logout
 
 - **CRITICAL FIX:** Chrome/Edge keyboard shortcuts now working
   - Changed to non-conflicting keys: Ctrl+Shift+K/L/U (was P/S/N)

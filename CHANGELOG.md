@@ -5,9 +5,15 @@ All notable changes to Prompt Pins for ChatGPT will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.2.0] - 2025-01-16
+## [1.2.0] - 2025-01-17
 
 ### Added
+- **Login button coverage fix** - Sidebar automatically collapses when login page is detected
+  - Detects when user is on ChatGPT login page (no chat input present, "Log in" button visible)
+  - Auto-collapses sidebar to prevent covering the login button
+  - Automatically restores user's saved sidebar state after successful login
+  - Runs background watcher to detect login state changes in real-time
+  - Preserves user's sidebar preference (expanded/collapsed) across login/logout
 - **Remember sidebar state** - Sidebar now remembers whether it was expanded or collapsed across browser sessions
   - State is saved automatically when toggling the sidebar
   - State persists across page refreshes, navigation, and browser restarts
@@ -15,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - No flickering or visual state changes during page load
 
 ### Fixed
+- **Login Layout Issue** - Sidebar no longer covers the "Log in" button when not logged in
 - **Chrome double panel issue** - Fixed bug where two sidebar panels would appear in Chrome
   - Added duplicate prevention check in `createSidebar()` function
   - Created `initializeSidebar()` function to intelligently handle sidebar creation and reconnection
@@ -23,6 +30,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added console logging for debugging sidebar lifecycle
 
 ### Technical
+- Added `isLoginPage()` function with multiple detection methods:
+  - Checks for user menu/avatar elements (primary indicator)
+  - Detects "Log in" or "Sign in" buttons
+  - Verifies chat ID presence in URL
+  - Checks for chat history sidebar
+  - Includes detailed console logging for debugging
+- Added `handleLoginStateChange()` to manage sidebar visibility based on login state
+  - Saves user's preference before auto-collapsing
+  - Syncs `sidebarOpen` variable with visual state to prevent double-click bug
+  - Restores original preference after login
+- Added state tracking variables:
+  - `wasOnLoginPage` - Tracks if user was on login page
+  - `manualOverrideOnLogin` - Respects user manually expanding sidebar on login page
+  - `savedPreferenceBeforeLogin` - Stores user's preference before auto-collapse
+- Added `startLoginStateWatcher()` and `stopLoginStateWatcher()` for real-time monitoring
+- Login state checked every second via interval timer
+- Modified `toggleSidebar()` to set manual override flag when user expands on login page
 - Added `loadSidebarState()` and `saveSidebarState()` functions for state persistence
 - Modified `toggleSidebar()` to automatically save state changes
 - Updated `createSidebar()` to apply saved state when creating new sidebar
