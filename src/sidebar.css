@@ -435,3 +435,26 @@
   font-weight: 500;
   border-left: 2px solid #6b7280;
 }
+
+/* Pin highlight animation for newly created pins */
+@keyframes pin-highlight {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 163, 127, 0.7);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(16, 163, 127, 0.3),
+                0 4px 12px rgba(16, 163, 127, 0.4);
+    transform: scale(1.02);
+  }
+  100% {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    transform: scale(1);
+  }
+}
+
+.pin-item.newly-created {
+  animation: pin-highlight 1.5s ease-out;
+  transition: none;
+  border-color: #10a37f;
+}

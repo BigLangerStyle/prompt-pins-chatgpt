@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.2.0] - 2025-01-17
 
 ### Added
+- **Pin highlight animation** - Newly created pins now have a visual highlight animation for better feedback
+  - Subtle glow and scale pulse animation (1.5 seconds)
+  - Uses brand color (#10a37f) for consistency
+  - Automatically scrolls to show new pin if it's off-screen
+  - Smooth, non-disruptive animation that doesn't interfere with drag-and-drop
+  - Works with all pin creation methods (context menu, keyboard shortcut)
+  - Robust timeout tracking prevents animation interruption during rapid user actions
+  - Proper cleanup prevents memory leaks from orphaned timeouts
+  - CSS transition conflicts prevented with transition: none during animation
 - **Login button coverage fix** - Sidebar automatically collapses when login page is detected
   - Detects when user is on ChatGPT login page (no chat input present, "Log in" button visible)
   - Auto-collapses sidebar to prevent covering the login button

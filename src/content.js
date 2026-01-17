@@ -39,6 +39,7 @@ let pins = [];
 let sidebarOpen = true; // Default to open, will be overridden by saved state
 let queuedPinIndex = null;
 let isWatchingForSubmit = false;
+let currentHighlightTimeout = null;
 
 // Cached DOM elements
 const cachedElements = {
@@ -494,6 +495,12 @@ async function saveSidebarState() {
 
 // Render the pins list
 function renderPins() {
+  // Clear any pending highlight animation timeout to prevent errors
+  if (currentHighlightTimeout !== null) {
+    clearTimeout(currentHighlightTimeout);
+    currentHighlightTimeout = null;
+  }
+  
   const list = cachedElements.pinsList;
   const nextBtn = cachedElements.nextBtn;
   const clearAllBtn = cachedElements.clearBtn;
@@ -637,6 +644,52 @@ function renderPins() {
     item.addEventListener('drop', handleDrop);
     item.addEventListener('dragend', handleDragEnd);
   });
+}
+
+// Highlight a newly created pin with animation
+function highlightNewPin(index) {
+  const pinsList = cachedElements.pinsList;
+  if (!pinsList) return;
+  
+  const pinItems = pinsList.querySelectorAll('.pin-item');
+  const newPinElement = pinItems[index];
+  
+  if (newPinElement) {
+    // Add highlight class
+    newPinElement.classList.add('newly-created');
+    
+    // Check if pin is visible in the viewport
+    const listRect = pinsList.getBoundingClientRect();
+    const pinRect = newPinElement.getBoundingClientRect();
+    
+    // Only scroll if the pin is not fully visible
+    const isFullyVisible = (
+      pinRect.top >= listRect.top &&
+      pinRect.bottom <= listRect.bottom
+    );
+    
+    if (!isFullyVisible) {
+      // Scroll into view smoothly (only when needed)
+      newPinElement.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'nearest' 
+      });
+    }
+    
+    // Clear any existing timeout
+    if (currentHighlightTimeout !== null) {
+      clearTimeout(currentHighlightTimeout);
+    }
+    
+    // Remove class after animation completes
+    currentHighlightTimeout = setTimeout(() => {
+      // Check if element still exists before removing class
+      if (newPinElement && newPinElement.parentNode) {
+        newPinElement.classList.remove('newly-created');
+      }
+      currentHighlightTimeout = null;
+    }, 1500);
+  }
 }
 
 // ============================================================================
@@ -869,6 +922,11 @@ function showCommentInput(selectedText) {
 
     savePins();
     renderPins();
+    
+    // Highlight the newly created pin
+    const newPinIndex = pins.length - 1;
+    highlightNewPin(newPinIndex);
+    
     cleanup();
     inputContainer.remove();
   });
