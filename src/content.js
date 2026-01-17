@@ -160,41 +160,47 @@ function isChatGPTGenerating() {
 
 // Check if user is on the login page
 function isLoginPage() {
-  // Method 1: Check for user account indicator (most reliable for new UI)
-  // When logged in, there should be user menu/profile elements
+  // Method 1: Check URL - if we have a chat ID, definitely logged in
+  const hasChatId = getCurrentChatId() !== null;
+  if (hasChatId) {
+    console.log('Prompt Pins: Has chat ID - user is logged in');
+    return false; // Definitely logged in
+  }
+  
+  // Method 2: Check if there's a chat input (when logged in, input is functional)
+  const hasInput = getChatGPTInput() !== null;
+  
+  // Method 3: Check if there's a visible "Log in" button
+  const buttons = Array.from(document.querySelectorAll('button, a'));
+  const hasLoginButton = buttons.some(btn => {
+    const text = btn.textContent.toLowerCase().trim();
+    return text === 'log in' || text === 'sign in' || text === 'login';
+  });
+  
+  // Method 4: Check for navigation sidebar (only appears when logged in)
+  const hasNavSidebar = document.querySelector('nav[class*="flex"]') !== null ||
+                        document.querySelector('aside') !== null;
+  
+  // Method 5: Check for user menu/avatar
   const hasUserMenu = document.querySelector('[data-headlessui-state]') !== null ||
                       document.querySelector('button[aria-label*="User"]') !== null ||
                       document.querySelector('[class*="avatar"]') !== null;
   
-  // Method 2: Check if there's a visible "Log in" button
-  const buttons = Array.from(document.querySelectorAll('button, a'));
-  const hasLoginButton = buttons.some(btn => {
-    const text = btn.textContent.toLowerCase();
-    return text.includes('log in') || text.includes('sign in') || text === 'login';
-  });
-  
-  // Method 3: Check URL - if we have a chat ID, definitely logged in
-  const hasChatId = getCurrentChatId() !== null;
-  
-  // Method 4: Check for elements that only appear when logged in
-  const hasSidebar = document.querySelector('nav') !== null;
-  const hasChatHistory = document.querySelector('[class*="chat"]') !== null;
-  
-  // Consider it a login page if:
-  // - No user menu/avatar (not logged in) OR
-  // - Has explicit login button OR
-  // - (No chat ID AND (no sidebar OR has login button))
-  const notLoggedIn = !hasUserMenu || hasLoginButton || (!hasChatId && !hasSidebar);
+  // Logic: Consider it a login page if:
+  // - Has explicit "Log in" button AND no chat ID
+  // - OR: No navigation sidebar AND no chat ID AND has input (the pre-login homepage)
+  const isOnLoginPage = (hasLoginButton && !hasChatId) || (!hasNavSidebar && !hasChatId && hasInput);
   
   console.log('Prompt Pins: Login detection -', {
-    hasUserMenu,
-    hasLoginButton,
     hasChatId,
-    hasSidebar,
-    isLoginPage: notLoggedIn
+    hasInput,
+    hasLoginButton,
+    hasNavSidebar,
+    hasUserMenu,
+    isLoginPage: isOnLoginPage
   });
   
-  return notLoggedIn;
+  return isOnLoginPage;
 }
 
 // Auto-collapse sidebar when on login page, restore state when logged in
