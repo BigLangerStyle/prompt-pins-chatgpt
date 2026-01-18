@@ -269,7 +269,7 @@ Copyright (c) 2025 Prompt Pins Contributors
 
 **Critical Fixes:**
 
-- **Login button coverage issue resolved
+- **Login button coverage issue resolved**
   - Sidebar automatically collapses when login page is detected
   - Automatically restores user's saved sidebar state after successful login
   - Runs real-time watcher to detect login state changes
