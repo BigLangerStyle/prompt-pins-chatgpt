@@ -17,6 +17,7 @@ A browser extension for Firefox and Chrome that lets you save questions and prom
 - **Dark Theme**: Matches ChatGPT's interface with a clean, modern design
 - **Auto-Submit**: Automatically submits prompts when you click "Use" or "Next Pin"
 - **Branded Minimize Button**: Prompt Pins icon on the minimized sidebar for easy access and brand recognition
+- **Keyboard Shortcuts Help**: [?] icon displays all keyboard shortcuts on hover, plus contextual tooltips on buttons
 
 ## Browser Support
 
