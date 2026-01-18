@@ -40,6 +40,8 @@ let sidebarOpen = true; // Default to open, will be overridden by saved state
 let queuedPinIndex = null;
 let isWatchingForSubmit = false;
 let currentHighlightTimeout = null;
+let isAutoExpanded = false; // Track if sidebar was auto-expanded for pin creation
+let autoCollapseTimeout = null; // Track timeout for auto-collapse
 
 // Cached DOM elements
 const cachedElements = {
@@ -432,6 +434,14 @@ function createSidebar() {
 }
 
 function toggleSidebar() {
+  // If user manually toggles during auto-expand, cancel auto-collapse
+  if (isAutoExpanded && autoCollapseTimeout) {
+    clearTimeout(autoCollapseTimeout);
+    autoCollapseTimeout = null;
+    isAutoExpanded = false;
+    console.log('Prompt Pins: User manually toggled, canceling auto-collapse');
+  }
+  
   sidebarOpen = !sidebarOpen;
   const sidebar = cachedElements.sidebar;
   const toggle = cachedElements.toggleBtn;
@@ -456,6 +466,38 @@ function toggleSidebar() {
   // Save sidebar state to storage
   saveSidebarState();
 }
+
+// Auto-expand sidebar temporarily for pin creation
+function autoExpandSidebar() {
+  const sidebar = cachedElements.sidebar;
+  const toggle = cachedElements.toggleBtn;
+  
+  if (!sidebar || !toggle) return;
+  
+  console.log('Prompt Pins: Auto-expanding sidebar for pin creation');
+  
+  // Visually expand the sidebar (but don't change sidebarOpen state or save)
+  sidebar.classList.remove('collapsed');
+  toggle.textContent = '-';
+  isAutoExpanded = true;
+}
+
+// Auto-collapse sidebar back to original state
+function autoCollapseSidebar() {
+  const sidebar = cachedElements.sidebar;
+  const toggle = cachedElements.toggleBtn;
+  
+  if (!sidebar || !toggle || !isAutoExpanded) return;
+  
+  console.log('Prompt Pins: Auto-collapsing sidebar back to original state');
+  
+  // Collapse the sidebar back (restore visual state without saving)
+  sidebar.classList.add('collapsed');
+  toggle.textContent = '+';
+  isAutoExpanded = false;
+  autoCollapseTimeout = null;
+}
+
 
 // ============================================================================
 // PIN STORAGE
@@ -765,11 +807,25 @@ function handleDragEnd(e) {
 
 // Create a new pin
 function createPin(text) {
-  showCommentInput(text);
+  // Check if sidebar is currently collapsed
+  const wasSidebarCollapsed = !sidebarOpen;
+  
+  // If collapsed, auto-expand it temporarily
+  if (wasSidebarCollapsed) {
+    // Clear any existing auto-collapse timeout
+    if (autoCollapseTimeout) {
+      clearTimeout(autoCollapseTimeout);
+      autoCollapseTimeout = null;
+    }
+    
+    autoExpandSidebar();
+  }
+  
+  showCommentInput(text, wasSidebarCollapsed);
 }
 
 // Show comment input field
-function showCommentInput(selectedText) {
+function showCommentInput(selectedText, wasSidebarCollapsed = false) {
   // Remove any existing comment input
   const existing = document.getElementById('pin-comment-input');
   if (existing) existing.remove();
@@ -927,12 +983,24 @@ function showCommentInput(selectedText) {
     const newPinIndex = pins.length - 1;
     highlightNewPin(newPinIndex);
     
+    // If sidebar was auto-expanded, schedule auto-collapse after animation
+    if (wasSidebarCollapsed && isAutoExpanded) {
+      // Wait for highlight animation to complete (1.5s) + small buffer
+      autoCollapseTimeout = setTimeout(() => {
+        autoCollapseSidebar();
+      }, 2000); // 2 seconds total: 1.5s animation + 0.5s buffer
+    }
+    
     cleanup();
     inputContainer.remove();
   });
 
   // Cancel
   document.getElementById('pin-cancel').addEventListener('click', () => {
+    // If sidebar was auto-expanded, collapse it back
+    if (wasSidebarCollapsed && isAutoExpanded) {
+      autoCollapseSidebar();
+    }
     cleanup();
     inputContainer.remove();
   });
@@ -943,6 +1011,10 @@ function showCommentInput(selectedText) {
       e.preventDefault();
       document.getElementById('pin-save').click();
     } else if (e.key === 'Escape') {
+      // If sidebar was auto-expanded, collapse it back
+      if (wasSidebarCollapsed && isAutoExpanded) {
+        autoCollapseSidebar();
+      }
       cleanup();
       inputContainer.remove();
     }
