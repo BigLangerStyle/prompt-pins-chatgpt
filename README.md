@@ -5,8 +5,9 @@ A browser extension for Firefox and Chrome that lets you save questions and prom
 ## Features
 
 - **Pin Any Text**: Highlight text in a ChatGPT conversation and right-click to pin it
+- **Manual Pin Creation**: Create pins directly from the sidebar with the "+ New" button (no text selection needed)
 - **Visual Feedback**: Newly created pins show a subtle highlight animation for confirmation
-- **Keyboard Shortcuts**: Use hotkeys for quick pin creation and usage
+- **Keyboard Shortcuts**: Use hotkeys for quick pin creation and usage (works with or without text selected)
 - **Smart Queue System**: Automatically queues pins if ChatGPT is busy, submits when ready
 - **Add Context**: Optionally add a note or comment to each pin
 - **Quick Access**: Use the "Next Pin" button to automatically load and submit your next question
@@ -84,13 +85,13 @@ A browser extension for Firefox and Chrome that lets you save questions and prom
 
 ### Firefox Shortcuts
 
-- **`Ctrl+Alt+P`** (or `Cmd+Alt+P` on Mac) - Create a pin from selected text
+- **`Ctrl+Alt+P`** (or `Cmd+Alt+P` on Mac) - Create a pin from selected text, or open manual creation if no text selected
 - **`Ctrl+Alt+S`** (or `Cmd+Alt+S` on Mac) - Send selected text immediately with "Expand on:" prefix
 - **`Ctrl+Alt+N`** (or `Cmd+Alt+N` on Mac) - Use the next pin in queue
 
 ### Chrome/Edge Shortcuts
 
-- **`Ctrl+Shift+K`** (or `Cmd+Shift+K` on Mac) - Create a pin from selected text
+- **`Ctrl+Shift+K`** (or `Cmd+Shift+K` on Mac) - Create a pin from selected text, or open manual creation if no text selected
 - **`Ctrl+Shift+L`** (or `Cmd+Shift+L` on Mac) - Send selected text immediately with "Expand on:" prefix
 - **`Ctrl+Shift+U`** (or `Cmd+Shift+U` on Mac) - Use the next pin in queue
 
