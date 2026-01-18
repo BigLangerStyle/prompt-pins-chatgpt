@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.2.0] - 2026-01-18
 
 ### Added
+- **Inline pin creation** - Create pins manually without highlighting text first
+  - New "+ New" button appears at bottom right of pins list
+  - Click button to reveal inline textarea form directly in the pins list
+  - Simple, focused interface with just text input and Cancel/Save buttons
+  - Manually created pins send text as-is (no "Expand on:" prefix)
+  - Works seamlessly with keyboard shortcut (Ctrl+Shift+K / Cmd+Shift+K) when no text is selected
+  - Sidebar auto-expands if collapsed when creating manual pins
+  - Form hidden when sidebar is collapsed
+  - Enter to save, Escape to cancel for quick keyboard workflow
 - **Auto-collapse behavior** - Sidebar now automatically expands and collapses when creating pins
   - When sidebar is collapsed and user creates a pin (via context menu or keyboard shortcut), sidebar briefly expands
   - New pin highlight animation plays (1.5 seconds)

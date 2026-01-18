@@ -215,6 +215,15 @@ function handleLoginStateChange() {
   if (!sidebar || !toggle) return;
   
   if (isOnLoginPage) {
+    // CRITICAL: Don't auto-collapse if user has a pin creation dialog open
+    const hasActiveDialog = document.getElementById('pin-comment-input') !== null;
+    const hasInlineFormOpen = document.getElementById('inline-pin-form')?.style.display === 'block';
+    
+    if (hasActiveDialog || hasInlineFormOpen) {
+      console.log('Prompt Pins: Pin creation in progress, deferring auto-collapse');
+      return; // Don't auto-collapse while user is creating a pin
+    }
+    
     // On login page - collapse sidebar if not already collapsed
     // BUT respect if user manually expanded it (manual override)
     if (!sidebar.classList.contains('collapsed') && !manualOverrideOnLogin) {
@@ -313,9 +322,16 @@ function fillInputWithPin(pin) {
     commentP.textContent = pin.comment;
     inputElement.appendChild(commentP);
   } else {
-    const prefix = isFromDifferentChat ? UI_TEXT.CROSS_CHAT_PREFIX : UI_TEXT.EXPAND_PREFIX;
+    // Check if pin was manually created (no "Expand on:" prefix for manual pins)
     const p = document.createElement('p');
-    p.textContent = `${prefix}: "${pin.text}"`;
+    if (pin.isManuallyCreated) {
+      // Manual pin: send text as-is
+      p.textContent = pin.text;
+    } else {
+      // Text-based pin: add prefix
+      const prefix = isFromDifferentChat ? UI_TEXT.CROSS_CHAT_PREFIX : UI_TEXT.EXPAND_PREFIX;
+      p.textContent = `${prefix}: "${pin.text}"`;
+    }
     inputElement.appendChild(p);
   }
 
@@ -564,6 +580,9 @@ function renderPins() {
     emptyDiv.className = 'empty-state';
     emptyDiv.textContent = UI_TEXT.EMPTY_STATE;
     list.appendChild(emptyDiv);
+    
+    // Add inline creation UI even when empty
+    addInlineCreationUI();
     return;
   }
 
@@ -686,6 +705,139 @@ function renderPins() {
     item.addEventListener('drop', handleDrop);
     item.addEventListener('dragend', handleDragEnd);
   });
+  
+  // Add inline creation UI
+  addInlineCreationUI();
+}
+
+// Add inline pin creation UI (+ New button and inline form)
+function addInlineCreationUI() {
+  const list = cachedElements.pinsList;
+  if (!list) return;
+
+  // Remove existing inline UI if present
+  const existingBtn = document.getElementById('inline-new-pin-btn');
+  const existingForm = document.getElementById('inline-pin-form');
+  if (existingBtn) existingBtn.remove();
+  if (existingForm) existingForm.remove();
+
+  // Create "+ New" button (fixed to bottom right of sidebar)
+  const newBtn = document.createElement('button');
+  newBtn.id = 'inline-new-pin-btn';
+  newBtn.className = 'inline-new-pin-btn';
+  newBtn.textContent = '+ New';
+  newBtn.title = 'Create a new pin manually';
+
+  // Create inline form (hidden initially, appears in pins list)
+  const formContainer = document.createElement('div');
+  formContainer.id = 'inline-pin-form';
+  formContainer.className = 'inline-pin-form';
+  formContainer.style.display = 'none';
+
+  const textarea = document.createElement('textarea');
+  textarea.id = 'inline-pin-textarea';
+  textarea.className = 'pin-dialog-textarea';
+  textarea.placeholder = 'Enter your pin text...';
+  textarea.rows = 3;
+
+  const buttons = document.createElement('div');
+  buttons.className = 'pin-dialog-buttons';
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'pin-dialog-button pin-dialog-button-cancel';
+  cancelBtn.textContent = 'Cancel';
+
+  const saveBtn = document.createElement('button');
+  saveBtn.className = 'pin-dialog-button pin-dialog-button-save';
+  saveBtn.textContent = 'Save Pin';
+
+  buttons.appendChild(cancelBtn);
+  buttons.appendChild(saveBtn);
+
+  formContainer.appendChild(textarea);
+  formContainer.appendChild(buttons);
+
+  // Event handlers
+  newBtn.addEventListener('click', () => {
+    // Hide empty state message if present
+    const emptyState = list.querySelector('.empty-state');
+    if (emptyState) {
+      emptyState.style.display = 'none';
+    }
+
+    // Show form
+    formContainer.style.display = 'block';
+    textarea.value = '';
+    textarea.focus();
+  });
+
+  const hideForm = () => {
+    formContainer.style.display = 'none';
+    
+    // Show empty state message if no pins
+    if (pins.length === 0) {
+      const emptyState = list.querySelector('.empty-state');
+      if (emptyState) {
+        emptyState.style.display = 'block';
+      }
+    }
+  };
+
+  cancelBtn.addEventListener('click', hideForm);
+
+  saveBtn.addEventListener('click', () => {
+    const text = textarea.value.trim();
+    if (!text) {
+      hideForm();
+      return;
+    }
+
+    const chatId = getCurrentChatId();
+    const chatTitle = getCurrentChatTitle();
+
+    const newPin = {
+      text: text,
+      comment: null,
+      timestamp: Date.now(),
+      chatId: chatId,
+      chatTitle: chatTitle,
+      isManuallyCreated: true // Flag for manual creation
+    };
+
+    pins.push(newPin);
+    savePins();
+    renderPins();
+
+    // Highlight the newly created pin
+    const newPinIndex = pins.length - 1;
+    highlightNewPin(newPinIndex);
+
+    hideForm();
+  });
+
+  // Auto-expand textarea as user types
+  textarea.addEventListener('input', () => {
+    textarea.style.height = 'auto';
+    textarea.style.height = textarea.scrollHeight + 'px';
+  });
+
+  // Enter to save (without shift), Escape to cancel
+  textarea.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      saveBtn.click();
+    } else if (e.key === 'Escape') {
+      hideForm();
+    }
+  });
+
+  // Append to DOM
+  const sidebar = cachedElements.sidebar;
+  if (sidebar) {
+    sidebar.appendChild(newBtn);
+  }
+  
+  list.appendChild(formContainer);
 }
 
 // Highlight a newly created pin with animation
@@ -807,6 +959,31 @@ function handleDragEnd(e) {
 
 // Create a new pin
 function createPin(text) {
+  const isManualCreation = !text || text.trim() === '';
+  
+  if (isManualCreation) {
+    // Manual creation: expand sidebar if needed, trigger inline form, keep expanded
+    if (!sidebarOpen) {
+      sidebarOpen = true;
+      const sidebar = cachedElements.sidebar;
+      const toggle = cachedElements.toggleBtn;
+      
+      if (sidebar && toggle) {
+        sidebar.classList.remove('collapsed');
+        toggle.textContent = '-';
+        saveSidebarState();
+      }
+    }
+    
+    // Trigger the inline form
+    const inlineBtn = document.getElementById('inline-new-pin-btn');
+    if (inlineBtn) {
+      inlineBtn.click();
+    }
+    return; // EXIT EARLY
+  }
+  
+  // Text-based creation: ORIGINAL WORKING CODE (don't change!)
   // Check if sidebar is currently collapsed
   const wasSidebarCollapsed = !sidebarOpen;
   
@@ -1289,9 +1466,11 @@ browser.runtime.onMessage.addListener((message) => {
     console.log("Prompt Pins: Create pin shortcut triggered");
     const selectedText = getSelectedText();
     if (selectedText) {
+      console.log("Prompt Pins: Text selected, creating pin with context");
       createPin(selectedText);
     } else {
-      console.log("Prompt Pins: No text selected");
+      console.log("Prompt Pins: No text selected, opening manual creation form");
+      createPin(''); // Empty string triggers manual creation
     }
     return Promise.resolve({success: true});
   } else if (message.action === 'send-immediately') {
