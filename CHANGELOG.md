@@ -5,9 +5,29 @@ All notable changes to Prompt Pins for ChatGPT will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.2.0] - 2025-01-17
+
+## [1.2.0] - 2026-01-18
 
 ### Added
+- **Auto-collapse behavior** - Sidebar now automatically expands and collapses when creating pins
+  - When sidebar is collapsed and user creates a pin (via context menu or keyboard shortcut), sidebar briefly expands
+  - New pin highlight animation plays (1.5 seconds)
+  - Sidebar automatically collapses back after 2 seconds
+  - User can cancel auto-collapse by manually toggling the sidebar during the animation
+  - Auto-collapse only triggers if sidebar was initially collapsed - respects user's preference
+  - Does not save the temporary expansion state - maintains original collapsed preference
+  - Provides smooth visual feedback without disrupting user's layout preference
+
+### Technical
+- Added `isAutoExpanded` state variable to track auto-expand status
+- Added `autoCollapseTimeout` to manage auto-collapse timing
+- Added `autoExpandSidebar()` helper function for temporary sidebar expansion
+- Added `autoCollapseSidebar()` helper function to restore collapsed state
+- Modified `createPin()` to detect collapsed state and trigger auto-expand
+- Modified `showCommentInput()` to accept `wasSidebarCollapsed` parameter and schedule auto-collapse
+- Modified `toggleSidebar()` to cancel auto-collapse timeout if user manually toggles during auto-expand
+- Auto-collapse waits 2 seconds: 1.5s for highlight animation + 0.5s buffer for smooth UX
+- Robust cleanup: clears timeout if user creates another pin during auto-expand period
 - **Pin highlight animation** - Newly created pins now have a visual highlight animation for better feedback
   - Subtle glow and scale pulse animation (1.5 seconds)
   - Uses brand color (#10a37f) for consistency

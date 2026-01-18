@@ -251,11 +251,23 @@ Copyright (c) 2025 Prompt Pins Contributors
 
 ## Version History
 
-### 1.2.0 (January 17, 2025)
 
-**Completed:**
+### 1.2.0 (January 18, 2026)
 
-- **CRITICAL FIX:** Login button coverage issue resolved
+**New Features:**
+
+- **Auto-collapse behavior** - Sidebar now automatically expands and collapses when creating pins
+  - When sidebar is collapsed and you create a pin (via context menu or keyboard shortcut), sidebar briefly expands
+  - New pin highlight animation plays (1.5 seconds) so you can see your pin was created
+  - Sidebar automatically collapses back after 2 seconds
+  - If you manually toggle the sidebar during this time, auto-collapse is cancelled
+  - Only triggers when sidebar was initially collapsed - respects your preference
+  - Doesn't save the temporary expansion - maintains your original collapsed state
+  - Provides smooth visual feedback without disrupting your layout
+
+**Critical Fixes:**
+
+- **Login button coverage issue resolved
   - Sidebar automatically collapses when login page is detected
   - Automatically restores user's saved sidebar state after successful login
   - Runs real-time watcher to detect login state changes
