@@ -169,31 +169,31 @@ function isLoginPage() {
     console.log('Prompt Pins: Has chat ID - user is logged in');
     return false; // Definitely logged in
   }
-  
+
   // Method 2: Check if there's a chat input (when logged in, input is functional)
   const hasInput = getChatGPTInput() !== null;
-  
+
   // Method 3: Check if there's a visible "Log in" button
   const buttons = Array.from(document.querySelectorAll('button, a'));
   const hasLoginButton = buttons.some(btn => {
     const text = btn.textContent.toLowerCase().trim();
     return text === 'log in' || text === 'sign in' || text === 'login';
   });
-  
+
   // Method 4: Check for navigation sidebar (only appears when logged in)
   const hasNavSidebar = document.querySelector('nav[class*="flex"]') !== null ||
                         document.querySelector('aside') !== null;
-  
+
   // Method 5: Check for user menu/avatar
   const hasUserMenu = document.querySelector('[data-headlessui-state]') !== null ||
                       document.querySelector('button[aria-label*="User"]') !== null ||
                       document.querySelector('[class*="avatar"]') !== null;
-  
+
   // Logic: Consider it a login page if:
   // - Has explicit "Log in" button AND no chat ID
   // - OR: No navigation sidebar AND no chat ID AND has input (the pre-login homepage)
   const isOnLoginPage = (hasLoginButton && !hasChatId) || (!hasNavSidebar && !hasChatId && hasInput);
-  
+
   console.log('Prompt Pins: Login detection -', {
     hasChatId,
     hasInput,
@@ -202,7 +202,7 @@ function isLoginPage() {
     hasUserMenu,
     isLoginPage: isOnLoginPage
   });
-  
+
   return isOnLoginPage;
 }
 
@@ -211,30 +211,30 @@ function handleLoginStateChange() {
   const isOnLoginPage = isLoginPage();
   const sidebar = cachedElements.sidebar;
   const toggle = cachedElements.toggleBtn;
-  
+
   if (!sidebar || !toggle) return;
-  
+
   if (isOnLoginPage) {
     // CRITICAL: Don't auto-collapse if user has a pin creation dialog open
     const hasActiveDialog = document.getElementById('pin-comment-input') !== null;
     const hasInlineFormOpen = document.getElementById('inline-pin-form')?.style.display === 'block';
-    
+
     if (hasActiveDialog || hasInlineFormOpen) {
       console.log('Prompt Pins: Pin creation in progress, deferring auto-collapse');
       return; // Don't auto-collapse while user is creating a pin
     }
-    
+
     // On login page - collapse sidebar if not already collapsed
     // BUT respect if user manually expanded it (manual override)
     if (!sidebar.classList.contains('collapsed') && !manualOverrideOnLogin) {
       console.log('Prompt Pins: Login page detected, auto-collapsing sidebar');
-      
+
       // Save user's preference before we change it
       savedPreferenceBeforeLogin = sidebarOpen;
-      
+
       // Collapse the sidebar (both visually and state)
       sidebar.classList.add('collapsed');
-      toggle.textContent = '+';
+      updateToggleButton(toggle, false);
       sidebarOpen = false; // Update state to match visual
       wasOnLoginPage = true;
     }
@@ -242,22 +242,22 @@ function handleLoginStateChange() {
     // Logged in - restore saved sidebar state only if we previously collapsed it for login
     if (wasOnLoginPage && savedPreferenceBeforeLogin !== null) {
       console.log('Prompt Pins: User logged in, restoring sidebar to saved preference:', savedPreferenceBeforeLogin);
-      
+
       // Restore user's original preference
       if (savedPreferenceBeforeLogin) {
         sidebar.classList.remove('collapsed');
-        toggle.textContent = '-';
+        updateToggleButton(toggle, true);
         sidebarOpen = true;
       } else {
         // User's preference was collapsed, keep it that way
         sidebar.classList.add('collapsed');
-        toggle.textContent = '+';
+        updateToggleButton(toggle, false);
         sidebarOpen = false;
       }
-      
+
       // Save the restored preference
       saveSidebarState();
-      
+
       // Reset flags
       wasOnLoginPage = false;
       manualOverrideOnLogin = false;
@@ -275,12 +275,12 @@ let savedPreferenceBeforeLogin = null; // Store user's preference before auto-co
 function startLoginStateWatcher() {
   // Check immediately
   handleLoginStateChange();
-  
+
   // Then check periodically
   if (loginStateCheckInterval) {
     clearInterval(loginStateCheckInterval);
   }
-  
+
   loginStateCheckInterval = setInterval(() => {
     handleLoginStateChange();
   }, 1000); // Check every second
@@ -363,6 +363,43 @@ function clearChatGPTInput() {
 // SIDEBAR CREATION
 // ============================================================================
 
+// Helper to create SVG icon element
+function createSVGIcon(className) {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('width', '24');
+  svg.setAttribute('height', '24');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('fill', 'none');
+  svg.setAttribute('stroke', 'currentColor');
+  svg.setAttribute('stroke-width', '2');
+  svg.classList.add(className);
+  return svg;
+}
+
+// Update toggle button icon and tooltip based on sidebar state
+function updateToggleButton(toggleBtn, isOpen) {
+  toggleBtn.innerHTML = '';
+
+  if (isOpen) {
+    toggleBtn.title = 'Minimize Prompt Pins';
+    const icon = createSVGIcon('toggle-icon-minus');
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', '5');
+    line.setAttribute('y1', '12');
+    line.setAttribute('x2', '19');
+    line.setAttribute('y2', '12');
+    icon.appendChild(line);
+    toggleBtn.appendChild(icon);
+  } else {
+    toggleBtn.title = 'Expand Prompt Pins';
+    const icon = createSVGIcon('toggle-icon-pin');
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', 'M12 2v20M16 6l-4 4-4-4M16 18l-4-4-4 4');
+    icon.appendChild(path);
+    toggleBtn.appendChild(icon);
+  }
+}
+
 // Create and inject the sidebar
 function createSidebar() {
   // Check if sidebar already exists (prevent duplicate creation)
@@ -397,8 +434,7 @@ function createSidebar() {
 
   const toggleBtn = document.createElement('button');
   toggleBtn.id = 'toggle-pins';
-  toggleBtn.title = 'Toggle sidebar';
-  toggleBtn.textContent = '-';
+  updateToggleButton(toggleBtn, true); // Start in expanded state
 
   headerButtons.appendChild(clearAllBtn);
   headerButtons.appendChild(toggleBtn);
@@ -442,7 +478,7 @@ function createSidebar() {
   // Apply saved sidebar state
   if (!sidebarOpen) {
     sidebar.classList.add('collapsed');
-    toggleBtn.textContent = '+';
+    updateToggleButton(toggleBtn, false);
   }
 
   // Load saved pins
@@ -457,15 +493,15 @@ function toggleSidebar() {
     isAutoExpanded = false;
     console.log('Prompt Pins: User manually toggled, canceling auto-collapse');
   }
-  
+
   sidebarOpen = !sidebarOpen;
   const sidebar = cachedElements.sidebar;
   const toggle = cachedElements.toggleBtn;
 
   if (sidebarOpen) {
     sidebar.classList.remove('collapsed');
-    toggle.textContent = '-';
-    
+    updateToggleButton(toggle, true);
+
     // If user manually expands on login page, set override flag
     if (isLoginPage()) {
       manualOverrideOnLogin = true;
@@ -473,12 +509,12 @@ function toggleSidebar() {
     }
   } else {
     sidebar.classList.add('collapsed');
-    toggle.textContent = '+';
-    
+    updateToggleButton(toggle, false);
+
     // If user manually collapses, clear override flag
     manualOverrideOnLogin = false;
   }
-  
+
   // Save sidebar state to storage
   saveSidebarState();
 }
@@ -487,14 +523,14 @@ function toggleSidebar() {
 function autoExpandSidebar() {
   const sidebar = cachedElements.sidebar;
   const toggle = cachedElements.toggleBtn;
-  
+
   if (!sidebar || !toggle) return;
-  
+
   console.log('Prompt Pins: Auto-expanding sidebar for pin creation');
-  
+
   // Visually expand the sidebar (but don't change sidebarOpen state or save)
   sidebar.classList.remove('collapsed');
-  toggle.textContent = '-';
+  updateToggleButton(toggle, true);
   isAutoExpanded = true;
 }
 
@@ -502,14 +538,14 @@ function autoExpandSidebar() {
 function autoCollapseSidebar() {
   const sidebar = cachedElements.sidebar;
   const toggle = cachedElements.toggleBtn;
-  
+
   if (!sidebar || !toggle || !isAutoExpanded) return;
-  
+
   console.log('Prompt Pins: Auto-collapsing sidebar back to original state');
-  
+
   // Collapse the sidebar back (restore visual state without saving)
   sidebar.classList.add('collapsed');
-  toggle.textContent = '+';
+  updateToggleButton(toggle, false);
   isAutoExpanded = false;
   autoCollapseTimeout = null;
 }
@@ -558,7 +594,7 @@ function renderPins() {
     clearTimeout(currentHighlightTimeout);
     currentHighlightTimeout = null;
   }
-  
+
   const list = cachedElements.pinsList;
   const nextBtn = cachedElements.nextBtn;
   const clearAllBtn = cachedElements.clearBtn;
@@ -580,7 +616,7 @@ function renderPins() {
     emptyDiv.className = 'empty-state';
     emptyDiv.textContent = UI_TEXT.EMPTY_STATE;
     list.appendChild(emptyDiv);
-    
+
     // Add inline creation UI even when empty
     addInlineCreationUI();
     return;
@@ -705,7 +741,7 @@ function renderPins() {
     item.addEventListener('drop', handleDrop);
     item.addEventListener('dragend', handleDragEnd);
   });
-  
+
   // Add inline creation UI
   addInlineCreationUI();
 }
@@ -773,7 +809,7 @@ function addInlineCreationUI() {
 
   const hideForm = () => {
     formContainer.style.display = 'none';
-    
+
     // Show empty state message if no pins
     if (pins.length === 0) {
       const emptyState = list.querySelector('.empty-state');
@@ -836,7 +872,7 @@ function addInlineCreationUI() {
   if (sidebar) {
     sidebar.appendChild(newBtn);
   }
-  
+
   list.appendChild(formContainer);
 }
 
@@ -844,37 +880,37 @@ function addInlineCreationUI() {
 function highlightNewPin(index) {
   const pinsList = cachedElements.pinsList;
   if (!pinsList) return;
-  
+
   const pinItems = pinsList.querySelectorAll('.pin-item');
   const newPinElement = pinItems[index];
-  
+
   if (newPinElement) {
     // Add highlight class
     newPinElement.classList.add('newly-created');
-    
+
     // Check if pin is visible in the viewport
     const listRect = pinsList.getBoundingClientRect();
     const pinRect = newPinElement.getBoundingClientRect();
-    
+
     // Only scroll if the pin is not fully visible
     const isFullyVisible = (
       pinRect.top >= listRect.top &&
       pinRect.bottom <= listRect.bottom
     );
-    
+
     if (!isFullyVisible) {
       // Scroll into view smoothly (only when needed)
-      newPinElement.scrollIntoView({ 
-        behavior: 'smooth', 
-        block: 'nearest' 
+      newPinElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest'
       });
     }
-    
+
     // Clear any existing timeout
     if (currentHighlightTimeout !== null) {
       clearTimeout(currentHighlightTimeout);
     }
-    
+
     // Remove class after animation completes
     currentHighlightTimeout = setTimeout(() => {
       // Check if element still exists before removing class
@@ -960,21 +996,21 @@ function handleDragEnd(e) {
 // Create a new pin
 function createPin(text) {
   const isManualCreation = !text || text.trim() === '';
-  
+
   if (isManualCreation) {
     // Manual creation: expand sidebar if needed, trigger inline form, keep expanded
     if (!sidebarOpen) {
       sidebarOpen = true;
       const sidebar = cachedElements.sidebar;
       const toggle = cachedElements.toggleBtn;
-      
+
       if (sidebar && toggle) {
         sidebar.classList.remove('collapsed');
-        toggle.textContent = '-';
+        updateToggleButton(toggle, true);
         saveSidebarState();
       }
     }
-    
+
     // Trigger the inline form
     const inlineBtn = document.getElementById('inline-new-pin-btn');
     if (inlineBtn) {
@@ -982,11 +1018,11 @@ function createPin(text) {
     }
     return; // EXIT EARLY
   }
-  
+
   // Text-based creation: ORIGINAL WORKING CODE (don't change!)
   // Check if sidebar is currently collapsed
   const wasSidebarCollapsed = !sidebarOpen;
-  
+
   // If collapsed, auto-expand it temporarily
   if (wasSidebarCollapsed) {
     // Clear any existing auto-collapse timeout
@@ -994,10 +1030,10 @@ function createPin(text) {
       clearTimeout(autoCollapseTimeout);
       autoCollapseTimeout = null;
     }
-    
+
     autoExpandSidebar();
   }
-  
+
   showCommentInput(text, wasSidebarCollapsed);
 }
 
@@ -1155,11 +1191,11 @@ function showCommentInput(selectedText, wasSidebarCollapsed = false) {
 
     savePins();
     renderPins();
-    
+
     // Highlight the newly created pin
     const newPinIndex = pins.length - 1;
     highlightNewPin(newPinIndex);
-    
+
     // If sidebar was auto-expanded, schedule auto-collapse after animation
     if (wasSidebarCollapsed && isAutoExpanded) {
       // Wait for highlight animation to complete (1.5s) + small buffer
@@ -1167,7 +1203,7 @@ function showCommentInput(selectedText, wasSidebarCollapsed = false) {
         autoCollapseSidebar();
       }, 2000); // 2 seconds total: 1.5s animation + 0.5s buffer
     }
-    
+
     cleanup();
     inputContainer.remove();
   });
@@ -1456,7 +1492,7 @@ function deletePin(index) {
 // Listen for messages from background script
 browser.runtime.onMessage.addListener((message) => {
   console.log("Prompt Pins: Message received in content script:", message);
-  
+
   if (message.action === 'createPin') {
     // Context menu: create pin from selected text
     createPin(message.selectedText);
@@ -1517,33 +1553,33 @@ setInterval(checkForChatChange, TIMINGS.CHAT_CHANGE_CHECK);
 async function initializeSidebar() {
   // Load saved sidebar state first
   await loadSidebarState();
-  
+
   // Check if sidebar already exists
   const existingSidebar = document.getElementById('prompt-pins-sidebar');
-  
+
   if (existingSidebar) {
     console.log('Prompt Pins: Reconnecting to existing sidebar');
-    
+
     // Reconnect to cached elements
     cachedElements.sidebar = existingSidebar;
     cachedElements.pinsList = document.getElementById('pins-list');
     cachedElements.nextBtn = document.getElementById('next-pin');
     cachedElements.clearBtn = document.getElementById('clear-all-pins');
     cachedElements.toggleBtn = document.getElementById('toggle-pins');
-    
+
     // Apply saved sidebar state to existing sidebar
     if (!sidebarOpen) {
       existingSidebar.classList.add('collapsed');
       if (cachedElements.toggleBtn) {
-        cachedElements.toggleBtn.textContent = '+';
+        updateToggleButton(cachedElements.toggleBtn, false);
       }
     } else {
       existingSidebar.classList.remove('collapsed');
       if (cachedElements.toggleBtn) {
-        cachedElements.toggleBtn.textContent = '-';
+        updateToggleButton(cachedElements.toggleBtn, true);
       }
     }
-    
+
     // Reattach event listeners (in case they were lost)
     if (cachedElements.toggleBtn) {
       cachedElements.toggleBtn.addEventListener('click', toggleSidebar);
@@ -1558,14 +1594,14 @@ async function initializeSidebar() {
         }
       });
     }
-    
+
     // Load and render pins
     loadPins();
   } else {
     // Create new sidebar
     createSidebar();
   }
-  
+
   // Start login state watcher
   startLoginStateWatcher();
 }

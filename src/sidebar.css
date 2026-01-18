@@ -78,7 +78,6 @@
 #toggle-pins {
   background: none;
   border: none;
-  font-size: 24px;
   cursor: pointer;
   color: #9ca3af;
   padding: 0;
@@ -88,10 +87,17 @@
   align-items: center;
   justify-content: center;
   border-radius: 4px;
+  flex-shrink: 0;
 }
 
 #toggle-pins:hover {
   background: #3e3e3e;
+}
+
+#toggle-pins svg {
+  display: block;
+  width: 24px;
+  height: 24px;
 }
 
 #clear-all-pins {

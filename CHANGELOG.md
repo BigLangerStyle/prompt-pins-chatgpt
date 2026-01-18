@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.2.0] - 2026-01-18
 
 ### Added
+- **Branded minimize button** - Toggle button now shows Prompt Pins icon when collapsed
+  - Collapsed state displays pin icon (matching the sidebar header icon)
+  - Expanded state shows clean minus icon (horizontal line)
+  - Both icons are SVG-based for crisp rendering at any size
+  - Contextual tooltips: "Expand Prompt Pins" when collapsed, "Minimize Prompt Pins" when expanded
+  - Consistent 24x24px sizing for visual balance
+  - Improves brand recognition and makes collapsed sidebar more discoverable
 - **Inline pin creation** - Create pins manually without highlighting text first
   - New "+ New" button appears at bottom right of pins list
   - Click button to reveal inline textarea form directly in the pins list
@@ -28,6 +35,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Provides smooth visual feedback without disrupting user's layout preference
 
 ### Technical
+- Added `updateToggleButton()` helper function to dynamically create SVG icons based on sidebar state
+- Toggle button now uses SVG elements instead of text characters ('+' and '-')
+- Updated all toggle button state changes to use `updateToggleButton()` helper
+- Updated CSS to accommodate SVG icons with proper sizing and alignment
+- Minus icon: horizontal line (x1="5" y1="12" x2="19" y2="12")
+- Pin icon: same as header icon (vertical line with arrows)
+- Both icons use currentColor for consistent theming
 - Added `isAutoExpanded` state variable to track auto-expand status
 - Added `autoCollapseTimeout` to manage auto-collapse timing
 - Added `autoExpandSidebar()` helper function for temporary sidebar expansion
