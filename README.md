@@ -84,6 +84,8 @@ A browser extension for Firefox and Chrome that lets you save questions and prom
 
 ## Keyboard Shortcuts
 
+**💡 Tip:** Hover over the **[?]** icon in the sidebar header to see all shortcuts for your browser!
+
 ### Firefox Shortcuts
 
 - **`Ctrl+Alt+P`** (or `Cmd+Alt+P` on Mac) - Create a pin from selected text, or open manual creation if no text selected

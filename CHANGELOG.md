@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.2.0] - 2026-01-18
 
 ### Added
+- **Keyboard shortcuts help UI** - Comprehensive keyboard shortcuts help system
+  - [?] help icon button positioned next to Clear button in header
+  - Hover tooltip displays all keyboard shortcuts for current browser
+  - Browser-aware: Shows Firefox shortcuts (Ctrl+Alt+P/S/N) or Chrome shortcuts (Ctrl+Shift+K/L/U)
+  - Platform-aware: Displays Cmd on Mac, Ctrl on Windows/Linux
+  - Includes instructions for customizing shortcuts in browser settings
+  - Contextual tooltips added to all action buttons:
+    - "Next Pin" button: Shows keyboard shortcut for using next pin
+    - "Use" buttons: "Load and submit this pin"
+    - "Delete" buttons: "Delete this pin"
+    - "+ New" button: Shows create pin shortcut with note about no selection needed
+  - Help button auto-hides when sidebar is collapsed
+  - Professional tooltip design matching ChatGPT's dark theme
 - **Branded minimize button** - Toggle button now shows Prompt Pins icon when collapsed
   - Collapsed state displays pin icon (matching the sidebar header icon)
   - Expanded state shows clean minus icon (horizontal line)
@@ -35,6 +48,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Provides smooth visual feedback without disrupting user's layout preference
 
 ### Technical
+- **Keyboard shortcuts help UI implementation**:
+  - Added browser detection constants: `IS_CHROME` and `IS_MAC` for platform/browser awareness
+  - Created `KEYBOARD_SHORTCUTS` configuration object with browser-specific shortcuts
+  - Added `SHORTCUTS` constant that dynamically selects appropriate shortcuts based on browser
+  - Implemented `createHelpButton()` function to generate [?] button with tooltip
+  - Tooltip displays browser-specific and platform-specific keyboard shortcuts
+  - Added contextual tooltips to all action buttons (Next Pin, Use, Delete, + New)
+  - CSS updates: Added `.keyboard-shortcuts-help-btn` and `.keyboard-shortcuts-tooltip` styles
+  - Tooltip uses absolute positioning (below button) with proper z-index layering
+  - Help button hidden when sidebar collapsed via CSS selector
+  - Monospace font for shortcut keys for better readability
+  - Color-coded shortcut keys with brand color (#10a37f)
 - Added `updateToggleButton()` helper function to dynamically create SVG icons based on sidebar state
 - Toggle button now uses SVG elements instead of text characters ('+' and '-')
 - Updated all toggle button state changes to use `updateToggleButton()` helper

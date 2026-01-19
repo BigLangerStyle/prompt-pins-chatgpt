@@ -2,6 +2,27 @@
 // CONSTANTS
 // ============================================================================
 
+// Browser and platform detection
+const IS_CHROME = typeof chrome !== 'undefined' && typeof chrome.runtime !== 'undefined' && !navigator.userAgent.includes('Firefox');
+const IS_MAC = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+
+// Keyboard shortcuts configuration
+const KEYBOARD_SHORTCUTS = {
+  firefox: {
+    createPin: IS_MAC ? 'Cmd+Alt+P' : 'Ctrl+Alt+P',
+    sendImmediately: IS_MAC ? 'Cmd+Alt+S' : 'Ctrl+Alt+S',
+    useNextPin: IS_MAC ? 'Cmd+Alt+N' : 'Ctrl+Alt+N'
+  },
+  chrome: {
+    createPin: IS_MAC ? 'Cmd+Shift+K' : 'Ctrl+Shift+K',
+    sendImmediately: IS_MAC ? 'Cmd+Shift+L' : 'Ctrl+Shift+L',
+    useNextPin: IS_MAC ? 'Cmd+Shift+U' : 'Ctrl+Shift+U'
+  }
+};
+
+// Get current browser's shortcuts
+const SHORTCUTS = IS_CHROME ? KEYBOARD_SHORTCUTS.chrome : KEYBOARD_SHORTCUTS.firefox;
+
 const SELECTORS = {
   INPUT: '#prompt-textarea',
   INPUT_FALLBACK: '[contenteditable="true"]',
@@ -400,6 +421,50 @@ function updateToggleButton(toggleBtn, isOpen) {
   }
 }
 
+// Create keyboard shortcuts help button with tooltip
+function createHelpButton() {
+  const helpBtn = document.createElement('button');
+  helpBtn.id = 'keyboard-shortcuts-help';
+  helpBtn.className = 'keyboard-shortcuts-help-btn';
+  helpBtn.innerHTML = '?';
+  helpBtn.setAttribute('aria-label', 'View keyboard shortcuts');
+  
+  // Create tooltip element
+  const tooltip = document.createElement('div');
+  tooltip.className = 'keyboard-shortcuts-tooltip';
+  tooltip.innerHTML = `
+    <div class="tooltip-title">Keyboard Shortcuts</div>
+    <div class="tooltip-shortcuts">
+      <div class="tooltip-shortcut">
+        <span class="shortcut-key">${SHORTCUTS.createPin}</span>
+        <span class="shortcut-desc">Create pin / Manual creation</span>
+      </div>
+      <div class="tooltip-shortcut">
+        <span class="shortcut-key">${SHORTCUTS.sendImmediately}</span>
+        <span class="shortcut-desc">Send text immediately</span>
+      </div>
+      <div class="tooltip-shortcut">
+        <span class="shortcut-key">${SHORTCUTS.useNextPin}</span>
+        <span class="shortcut-desc">Use next pin in queue</span>
+      </div>
+    </div>
+    <div class="tooltip-footer">Customize in browser settings</div>
+  `;
+  
+  helpBtn.appendChild(tooltip);
+  
+  // Show/hide tooltip on hover
+  helpBtn.addEventListener('mouseenter', () => {
+    tooltip.style.display = 'block';
+  });
+  
+  helpBtn.addEventListener('mouseleave', () => {
+    tooltip.style.display = 'none';
+  });
+  
+  return helpBtn;
+}
+
 // Create and inject the sidebar
 function createSidebar() {
   // Check if sidebar already exists (prevent duplicate creation)
@@ -427,6 +492,7 @@ function createSidebar() {
   const headerButtons = document.createElement('div');
   headerButtons.className = 'header-buttons';
 
+  const helpBtn = createHelpButton();
   const clearAllBtn = document.createElement('button');
   clearAllBtn.id = 'clear-all-pins';
   clearAllBtn.title = 'Clear all pins';
@@ -436,6 +502,7 @@ function createSidebar() {
   toggleBtn.id = 'toggle-pins';
   updateToggleButton(toggleBtn, true); // Start in expanded state
 
+  headerButtons.appendChild(helpBtn);
   headerButtons.appendChild(clearAllBtn);
   headerButtons.appendChild(toggleBtn);
   header.appendChild(headerTitle);
@@ -446,6 +513,7 @@ function createSidebar() {
   nextBtn.id = 'next-pin';
   nextBtn.className = 'next-pin-btn';
   nextBtn.textContent = 'Next Pin ->';
+  nextBtn.title = `Use next pin in queue (${SHORTCUTS.useNextPin})`;
 
   // Create pins list
   const pinsList = document.createElement('div');
@@ -695,6 +763,7 @@ function renderPins() {
       useBtn.className = 'use-pin';
       useBtn.setAttribute('data-index', index);
       useBtn.textContent = 'Use';
+      useBtn.title = 'Load and submit this pin';
 
       // Disable use button if another pin is queued
       if (queuedPinIndex !== null) {
@@ -707,6 +776,7 @@ function renderPins() {
       deleteBtn.className = 'delete-pin';
       deleteBtn.setAttribute('data-index', index);
       deleteBtn.textContent = UI_TEXT.DELETE_SYMBOL;
+      deleteBtn.title = 'Delete this pin';
 
       useBtn.addEventListener('click', (e) => {
         const idx = parseInt(e.target.dataset.index);
@@ -762,7 +832,7 @@ function addInlineCreationUI() {
   newBtn.id = 'inline-new-pin-btn';
   newBtn.className = 'inline-new-pin-btn';
   newBtn.textContent = '+ New';
-  newBtn.title = 'Create a new pin manually';
+  newBtn.title = `Create a new pin manually (${SHORTCUTS.createPin} without selection)`;
 
   // Create inline form (hidden initially, appears in pins list)
   const formContainer = document.createElement('div');
