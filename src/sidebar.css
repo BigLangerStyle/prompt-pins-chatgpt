@@ -191,6 +191,58 @@
   border-left: 3px solid #10a37f;
 }
 
+/* Editable field wrappers */
+.pin-comment-wrapper,
+.pin-text-wrapper {
+  position: relative;
+  margin-bottom: 8px;
+}
+
+.pin-comment-wrapper {
+  display: block;
+}
+
+.pin-text-wrapper {
+  display: block;
+}
+
+/* Edit icon */
+.edit-icon {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  cursor: pointer;
+  pointer-events: none;
+  user-select: none;
+}
+
+.pin-comment-wrapper:hover .edit-icon,
+.pin-text-wrapper:hover .edit-icon {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.edit-icon:hover {
+  transform: translateY(-50%) scale(1.1);
+}
+
+/* Make editable fields have a subtle hover effect */
+.pin-editable-field {
+  cursor: pointer;
+  transition: background-color 0.2s;
+  padding-right: 32px; /* Make room for edit icon */
+}
+
+.pin-comment-wrapper:hover .pin-editable-field,
+.pin-text-wrapper:hover .pin-editable-field {
+  background-color: rgba(16, 163, 127, 0.05);
+}
+
+
 .pin-actions {
   display: flex;
   gap: 6px;

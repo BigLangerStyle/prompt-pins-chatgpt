@@ -774,16 +774,58 @@ function renderPins() {
       pinItem.classList.add('cross-chat');
     }
 
-    const pinText = document.createElement('div');
-    pinText.className = 'pin-text';
-    pinText.textContent = `"${pin.text}"`;
-    pinItem.appendChild(pinText);
+    // Determine if this pin has a selectedText (quoted text from highlight)
+    // vs. manually created plain text
+    const hasSelectedText = pin.selectedText && pin.selectedText.trim().length > 0;
+    
+    if (hasSelectedText) {
+      // Pin Type 1: From highlighted text - show quoted text (NOT editable)
+      const pinText = document.createElement('div');
+      pinText.className = 'pin-text';
+      pinText.textContent = `"${pin.text}"`;
+      pinItem.appendChild(pinText);
 
-    if (pin.comment) {
-      const pinComment = document.createElement('div');
-      pinComment.className = 'pin-comment';
-      pinComment.textContent = pin.comment;
-      pinItem.appendChild(pinComment);
+      // Show comment field (EDITABLE)
+      if (pin.comment) {
+        const pinCommentWrapper = document.createElement('div');
+        pinCommentWrapper.className = 'pin-comment-wrapper';
+        pinCommentWrapper.setAttribute('data-index', index);
+        pinCommentWrapper.setAttribute('data-field', 'comment');
+        
+        const pinComment = document.createElement('div');
+        pinComment.className = 'pin-comment pin-editable-field';
+        pinComment.textContent = pin.comment;
+        
+        const editIcon = document.createElement('span');
+        editIcon.className = 'edit-icon';
+        editIcon.textContent = '✏️';
+        editIcon.title = 'Click to edit';
+        
+        pinCommentWrapper.appendChild(pinComment);
+        pinCommentWrapper.appendChild(editIcon);
+        pinItem.appendChild(pinCommentWrapper);
+      }
+    } else {
+      // Pin Type 2: From manual creation - show plain text (EDITABLE, no quotes)
+      const pinTextWrapper = document.createElement('div');
+      pinTextWrapper.className = 'pin-text-wrapper';
+      pinTextWrapper.setAttribute('data-index', index);
+      pinTextWrapper.setAttribute('data-field', 'text');
+      
+      const pinText = document.createElement('div');
+      pinText.className = 'pin-text pin-editable-field';
+      pinText.textContent = pin.text;
+      pinText.style.fontStyle = 'normal'; // Override italic style for manual pins
+      pinText.style.borderLeft = 'none'; // Remove quote border
+      
+      const editIcon = document.createElement('span');
+      editIcon.className = 'edit-icon';
+      editIcon.textContent = '✏️';
+      editIcon.title = 'Click to edit';
+      
+      pinTextWrapper.appendChild(pinText);
+      pinTextWrapper.appendChild(editIcon);
+      pinItem.appendChild(pinTextWrapper);
     }
 
     // Show cross-chat badge if pin is from another chat
@@ -869,6 +911,19 @@ function renderPins() {
     item.addEventListener('dragleave', handleDragLeave);
     item.addEventListener('drop', handleDrop);
     item.addEventListener('dragend', handleDragEnd);
+  });
+
+  // Add inline editing functionality
+  list.querySelectorAll('.pin-comment-wrapper, .pin-text-wrapper').forEach(wrapper => {
+    const editableField = wrapper.querySelector('.pin-editable-field');
+    const editIcon = wrapper.querySelector('.edit-icon');
+    
+    if (editableField && editIcon) {
+      // Click on field or icon to edit
+      const startEdit = () => enterEditMode(wrapper);
+      editableField.addEventListener('click', startEdit);
+      editIcon.addEventListener('click', startEdit);
+    }
   });
 
   // Add inline creation UI
@@ -1049,6 +1104,160 @@ function highlightNewPin(index) {
       currentHighlightTimeout = null;
     }, 1500);
   }
+}
+
+// ============================================================================
+// INLINE EDITING
+// ============================================================================
+
+// Enter edit mode for a pin field
+function enterEditMode(wrapper) {
+  const index = parseInt(wrapper.getAttribute('data-index'));
+  const field = wrapper.getAttribute('data-field'); // 'comment' or 'text'
+  const pin = pins[index];
+  
+  if (!pin) return;
+  
+  // Get current value
+  const currentValue = field === 'comment' ? pin.comment : pin.text;
+  
+  // Get the editable field and icon
+  const editableField = wrapper.querySelector('.pin-editable-field');
+  const editIcon = wrapper.querySelector('.edit-icon');
+  
+  if (!editableField) return;
+  
+  // Hide the field and icon
+  editableField.style.display = 'none';
+  if (editIcon) editIcon.style.display = 'none';
+  
+  // Create textarea for editing
+  const textarea = document.createElement('textarea');
+  textarea.className = 'pin-edit-textarea';
+  textarea.value = currentValue || '';
+  textarea.style.width = '100%';
+  textarea.style.minHeight = '60px';
+  textarea.style.padding = '8px';
+  textarea.style.border = '1px solid #10a37f';
+  textarea.style.borderRadius = '4px';
+  textarea.style.fontSize = '13px';
+  textarea.style.background = '#1a1a1a';
+  textarea.style.color = '#e5e7eb';
+  textarea.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  textarea.style.resize = 'vertical';
+  textarea.style.marginBottom = '8px';
+  
+  // Create button container
+  const buttonContainer = document.createElement('div');
+  buttonContainer.style.display = 'flex';
+  buttonContainer.style.gap = '8px';
+  buttonContainer.style.justifyContent = 'flex-end';
+  
+  // Create Save button
+  const saveBtn = document.createElement('button');
+  saveBtn.textContent = 'Save';
+  saveBtn.className = 'pin-edit-save-btn';
+  saveBtn.style.padding = '6px 16px';
+  saveBtn.style.borderRadius = '4px';
+  saveBtn.style.cursor = 'pointer';
+  saveBtn.style.fontSize = '13px';
+  saveBtn.style.border = 'none';
+  saveBtn.style.background = '#10a37f';
+  saveBtn.style.color = 'white';
+  saveBtn.style.fontWeight = '500';
+  
+  saveBtn.addEventListener('mouseenter', () => {
+    saveBtn.style.background = '#0d8c6a';
+  });
+  saveBtn.addEventListener('mouseleave', () => {
+    saveBtn.style.background = '#10a37f';
+  });
+  
+  // Create Cancel button
+  const cancelBtn = document.createElement('button');
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.className = 'pin-edit-cancel-btn';
+  cancelBtn.style.padding = '6px 16px';
+  cancelBtn.style.borderRadius = '4px';
+  cancelBtn.style.cursor = 'pointer';
+  cancelBtn.style.fontSize = '13px';
+  cancelBtn.style.border = '1px solid #3e3e3e';
+  cancelBtn.style.background = '#2a2a2a';
+  cancelBtn.style.color = '#ececec';
+  
+  cancelBtn.addEventListener('mouseenter', () => {
+    cancelBtn.style.background = '#3e3e3e';
+  });
+  cancelBtn.addEventListener('mouseleave', () => {
+    cancelBtn.style.background = '#2a2a2a';
+  });
+  
+  // Add buttons to container
+  buttonContainer.appendChild(saveBtn);
+  buttonContainer.appendChild(cancelBtn);
+  
+  // Insert editing UI after the hidden field
+  wrapper.insertBefore(textarea, editableField.nextSibling);
+  wrapper.insertBefore(buttonContainer, textarea.nextSibling);
+  
+  // Focus the textarea and select content
+  textarea.focus();
+  textarea.select();
+  
+  // Auto-resize textarea
+  const autoResize = () => {
+    textarea.style.height = 'auto';
+    textarea.style.height = textarea.scrollHeight + 'px';
+  };
+  textarea.addEventListener('input', autoResize);
+  autoResize();
+  
+  // Save handler
+  const save = () => {
+    const newValue = textarea.value.trim();
+    
+    if (!newValue) {
+      // Don't allow empty values
+      textarea.focus();
+      return;
+    }
+    
+    // Update the pin
+    if (field === 'comment') {
+      pin.comment = newValue;
+    } else {
+      pin.text = newValue;
+    }
+    
+    // Save and re-render
+    savePins();
+    renderPins();
+    
+    // Highlight the updated pin
+    highlightNewPin(index);
+  };
+  
+  // Cancel handler
+  const cancel = () => {
+    // Just re-render to restore original state
+    renderPins();
+  };
+  
+  // Event listeners
+  saveBtn.addEventListener('click', save);
+  cancelBtn.addEventListener('click', cancel);
+  
+  // Keyboard shortcuts
+  textarea.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      // Enter alone saves (Shift+Enter for new line)
+      e.preventDefault();
+      save();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      cancel();
+    }
+  });
 }
 
 // ============================================================================
@@ -1310,6 +1519,7 @@ function showCommentInput(selectedText, wasSidebarCollapsed = false) {
 
     const newPin = {
       text: selectedText,
+      selectedText: selectedText, // Store original selected text for editing logic
       comment: comment || null,
       timestamp: Date.now(),
       chatId: chatId,
