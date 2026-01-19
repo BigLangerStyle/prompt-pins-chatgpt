@@ -761,21 +761,19 @@ async function saveWelcomeState() {
 // PIN RENDERING
 // ============================================================================
 
-// Render the pins list
-function renderPins() {
-  // Clear any pending highlight animation timeout to prevent errors
+// Helper: Clear any pending animation timeouts
+function clearPendingAnimations() {
   if (currentHighlightTimeout !== null) {
     clearTimeout(currentHighlightTimeout);
     currentHighlightTimeout = null;
   }
+}
 
-  const list = cachedElements.pinsList;
+// Helper: Update button states based on pins length and queue status
+function updateButtonStates() {
   const nextBtn = cachedElements.nextBtn;
   const clearAllBtn = cachedElements.clearBtn;
 
-  if (!list) return;
-
-  // Enable/disable next button and clear all button
   if (nextBtn) {
     nextBtn.disabled = pins.length === 0 || queuedPinIndex !== null;
   }
@@ -783,181 +781,173 @@ function renderPins() {
   if (clearAllBtn) {
     clearAllBtn.disabled = pins.length === 0;
   }
+}
 
-  if (pins.length === 0) {
-    list.innerHTML = '';
-    const emptyDiv = document.createElement('div');
-    emptyDiv.className = 'empty-state';
-    emptyDiv.textContent = UI_TEXT.EMPTY_STATE;
-    list.appendChild(emptyDiv);
+// Helper: Render empty state message
+function renderEmptyState() {
+  const list = cachedElements.pinsList;
+  if (!list) return;
 
-    // Add inline creation UI even when empty
-    addInlineCreationUI();
-    return;
+  list.innerHTML = '';
+  const emptyDiv = document.createElement('div');
+  emptyDiv.className = 'empty-state';
+  emptyDiv.textContent = UI_TEXT.EMPTY_STATE;
+  list.appendChild(emptyDiv);
+}
+
+// Helper: Create a single pin item element
+function createPinItem(pin, index, currentChatId) {
+  const pinItem = document.createElement('div');
+  pinItem.className = 'pin-item';
+  pinItem.setAttribute('data-index', index);
+  pinItem.setAttribute('draggable', 'true');
+
+  // Add queued class if this pin is queued
+  const isQueued = queuedPinIndex === index;
+  if (isQueued) {
+    pinItem.classList.add('queued');
   }
 
-  // Clear list
-  list.innerHTML = '';
+  // Check if pin is from a different chat
+  const isFromDifferentChat = pin.chatId && currentChatId && pin.chatId !== currentChatId;
+  if (isFromDifferentChat) {
+    pinItem.classList.add('cross-chat');
+  }
 
-  // Get current chat ID for comparison
-  const currentChatId = getCurrentChatId();
+  // Determine if this pin has a selectedText (quoted text from highlight)
+  // vs. manually created plain text
+  const hasSelectedText = pin.selectedText && pin.selectedText.trim().length > 0;
+  
+  if (hasSelectedText) {
+    // Pin Type 1: From highlighted text - show quoted text (NOT editable)
+    const pinText = document.createElement('div');
+    pinText.className = 'pin-text';
+    pinText.textContent = `"${pin.text}"`;
+    pinItem.appendChild(pinText);
 
-  // Create DocumentFragment for better performance (single reflow instead of N reflows)
-  const fragment = document.createDocumentFragment();
-
-  // Create pin items
-  pins.forEach((pin, index) => {
-    const pinItem = document.createElement('div');
-    pinItem.className = 'pin-item';
-    pinItem.setAttribute('data-index', index);
-    pinItem.setAttribute('draggable', 'true');
-
-    // Add queued class if this pin is queued
-    const isQueued = queuedPinIndex === index;
-    if (isQueued) {
-      pinItem.classList.add('queued');
-    }
-
-    // Check if pin is from a different chat
-    const isFromDifferentChat = pin.chatId && currentChatId && pin.chatId !== currentChatId;
-    if (isFromDifferentChat) {
-      pinItem.classList.add('cross-chat');
-    }
-
-    // Determine if this pin has a selectedText (quoted text from highlight)
-    // vs. manually created plain text
-    const hasSelectedText = pin.selectedText && pin.selectedText.trim().length > 0;
-    
-    if (hasSelectedText) {
-      // Pin Type 1: From highlighted text - show quoted text (NOT editable)
-      const pinText = document.createElement('div');
-      pinText.className = 'pin-text';
-      pinText.textContent = `"${pin.text}"`;
-      pinItem.appendChild(pinText);
-
-      // Show comment field (EDITABLE)
-      if (pin.comment) {
-        const pinCommentWrapper = document.createElement('div');
-        pinCommentWrapper.className = 'pin-comment-wrapper';
-        pinCommentWrapper.setAttribute('data-index', index);
-        pinCommentWrapper.setAttribute('data-field', 'comment');
-        
-        const pinComment = document.createElement('div');
-        pinComment.className = 'pin-comment pin-editable-field';
-        pinComment.textContent = pin.comment;
-        
-        const editIcon = document.createElement('span');
-        editIcon.className = 'edit-icon';
-        editIcon.textContent = '✏️';
-        editIcon.title = 'Click to edit';
-        
-        pinCommentWrapper.appendChild(pinComment);
-        pinCommentWrapper.appendChild(editIcon);
-        pinItem.appendChild(pinCommentWrapper);
-      }
-    } else {
-      // Pin Type 2: From manual creation - show plain text (EDITABLE, no quotes)
-      const pinTextWrapper = document.createElement('div');
-      pinTextWrapper.className = 'pin-text-wrapper';
-      pinTextWrapper.setAttribute('data-index', index);
-      pinTextWrapper.setAttribute('data-field', 'text');
+    // Show comment field (EDITABLE)
+    if (pin.comment) {
+      const pinCommentWrapper = document.createElement('div');
+      pinCommentWrapper.className = 'pin-comment-wrapper';
+      pinCommentWrapper.setAttribute('data-index', index);
+      pinCommentWrapper.setAttribute('data-field', 'comment');
       
-      const pinText = document.createElement('div');
-      pinText.className = 'pin-text pin-editable-field';
-      pinText.textContent = pin.text;
-      pinText.style.fontStyle = 'normal'; // Override italic style for manual pins
-      pinText.style.borderLeft = 'none'; // Remove quote border
+      const pinComment = document.createElement('div');
+      pinComment.className = 'pin-comment pin-editable-field';
+      pinComment.textContent = pin.comment;
       
       const editIcon = document.createElement('span');
       editIcon.className = 'edit-icon';
       editIcon.textContent = '✏️';
       editIcon.title = 'Click to edit';
       
-      pinTextWrapper.appendChild(pinText);
-      pinTextWrapper.appendChild(editIcon);
-      pinItem.appendChild(pinTextWrapper);
+      pinCommentWrapper.appendChild(pinComment);
+      pinCommentWrapper.appendChild(editIcon);
+      pinItem.appendChild(pinCommentWrapper);
     }
+  } else {
+    // Pin Type 2: From manual creation - show plain text (EDITABLE, no quotes)
+    const pinTextWrapper = document.createElement('div');
+    pinTextWrapper.className = 'pin-text-wrapper';
+    pinTextWrapper.setAttribute('data-index', index);
+    pinTextWrapper.setAttribute('data-field', 'text');
+    
+    const pinText = document.createElement('div');
+    pinText.className = 'pin-text pin-editable-field';
+    pinText.textContent = pin.text;
+    pinText.style.fontStyle = 'normal'; // Override italic style for manual pins
+    pinText.style.borderLeft = 'none'; // Remove quote border
+    
+    const editIcon = document.createElement('span');
+    editIcon.className = 'edit-icon';
+    editIcon.textContent = '✏️';
+    editIcon.title = 'Click to edit';
+    
+    pinTextWrapper.appendChild(pinText);
+    pinTextWrapper.appendChild(editIcon);
+    pinItem.appendChild(pinTextWrapper);
+  }
 
-    // Show cross-chat badge if pin is from another chat
-    if (isFromDifferentChat) {
-      const crossChatBadge = document.createElement('div');
-      crossChatBadge.className = 'cross-chat-badge';
-      if (pin.chatTitle) {
-        crossChatBadge.textContent = `From: ${pin.chatTitle}`;
-      } else {
-        crossChatBadge.textContent = 'From another chat';
-      }
-      pinItem.appendChild(crossChatBadge);
-    }
-
-    // Show queued badge if this pin is queued
-    if (isQueued) {
-      const queuedBadge = document.createElement('div');
-      queuedBadge.className = 'queued-badge';
-      queuedBadge.textContent = UI_TEXT.QUEUED_BADGE;
-      pinItem.appendChild(queuedBadge);
-    }
-
-    const pinActions = document.createElement('div');
-    pinActions.className = 'pin-actions';
-
-    if (isQueued) {
-      // Show cancel button for queued pin
-      const cancelBtn = document.createElement('button');
-      cancelBtn.className = 'cancel-queue-btn';
-      cancelBtn.textContent = 'Cancel';
-      cancelBtn.addEventListener('click', cancelQueue);
-      pinActions.appendChild(cancelBtn);
+  // Show cross-chat badge if pin is from another chat
+  if (isFromDifferentChat) {
+    const crossChatBadge = document.createElement('div');
+    crossChatBadge.className = 'cross-chat-badge';
+    if (pin.chatTitle) {
+      crossChatBadge.textContent = `From: ${pin.chatTitle}`;
     } else {
-      // Show normal use/delete buttons
-      const useBtn = document.createElement('button');
-      useBtn.className = 'use-pin';
-      useBtn.setAttribute('data-index', index);
-      useBtn.textContent = 'Use';
-      useBtn.title = 'Load and submit this pin';
+      crossChatBadge.textContent = 'From another chat';
+    }
+    pinItem.appendChild(crossChatBadge);
+  }
 
-      // Disable use button if another pin is queued
-      if (queuedPinIndex !== null) {
-        useBtn.disabled = true;
-        useBtn.style.opacity = '0.5';
-        useBtn.style.cursor = 'not-allowed';
-      }
+  // Show queued badge if this pin is queued
+  if (isQueued) {
+    const queuedBadge = document.createElement('div');
+    queuedBadge.className = 'queued-badge';
+    queuedBadge.textContent = UI_TEXT.QUEUED_BADGE;
+    pinItem.appendChild(queuedBadge);
+  }
 
-      const deleteBtn = document.createElement('button');
-      deleteBtn.className = 'delete-pin';
-      deleteBtn.setAttribute('data-index', index);
-      deleteBtn.textContent = UI_TEXT.DELETE_SYMBOL;
-      deleteBtn.title = 'Delete this pin';
+  const pinActions = document.createElement('div');
+  pinActions.className = 'pin-actions';
 
-      useBtn.addEventListener('click', (e) => {
-        const idx = parseInt(e.target.dataset.index);
-        usePin(idx, true);
-      });
+  if (isQueued) {
+    // Show cancel button for queued pin
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'cancel-queue-btn';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.addEventListener('click', cancelQueue);
+    pinActions.appendChild(cancelBtn);
+  } else {
+    // Show normal use/delete buttons
+    const useBtn = document.createElement('button');
+    useBtn.className = 'use-pin';
+    useBtn.setAttribute('data-index', index);
+    useBtn.textContent = 'Use';
+    useBtn.title = 'Load and submit this pin';
 
-      deleteBtn.addEventListener('click', (e) => {
-        const idx = parseInt(e.target.dataset.index);
-        deletePin(idx);
-      });
-
-      pinActions.appendChild(useBtn);
-      pinActions.appendChild(deleteBtn);
+    // Disable use button if another pin is queued
+    if (queuedPinIndex !== null) {
+      useBtn.disabled = true;
+      useBtn.style.opacity = '0.5';
+      useBtn.style.cursor = 'not-allowed';
     }
 
-    pinItem.appendChild(pinActions);
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'delete-pin';
+    deleteBtn.setAttribute('data-index', index);
+    deleteBtn.textContent = UI_TEXT.DELETE_SYMBOL;
+    deleteBtn.title = 'Delete this pin';
 
-    const pinTimestamp = document.createElement('div');
-    pinTimestamp.className = 'pin-timestamp';
-    pinTimestamp.textContent = new Date(pin.timestamp).toLocaleString();
-    pinItem.appendChild(pinTimestamp);
+    useBtn.addEventListener('click', (e) => {
+      const idx = parseInt(e.target.dataset.index);
+      usePin(idx, true);
+    });
 
-    // Add to fragment instead of directly to DOM
-    fragment.appendChild(pinItem);
-  });
+    deleteBtn.addEventListener('click', (e) => {
+      const idx = parseInt(e.target.dataset.index);
+      deletePin(idx);
+    });
 
-  // Single DOM append - much better performance!
-  list.appendChild(fragment);
+    pinActions.appendChild(useBtn);
+    pinActions.appendChild(deleteBtn);
+  }
 
-  // Add drag and drop functionality
+  pinItem.appendChild(pinActions);
+
+  const pinTimestamp = document.createElement('div');
+  pinTimestamp.className = 'pin-timestamp';
+  pinTimestamp.textContent = new Date(pin.timestamp).toLocaleString();
+  pinItem.appendChild(pinTimestamp);
+
+  return pinItem;
+}
+
+// Helper: Attach drag and drop event handlers to all pin items
+function attachDragAndDropHandlers() {
+  const list = cachedElements.pinsList;
+  if (!list) return;
+
   list.querySelectorAll('.pin-item').forEach(item => {
     item.addEventListener('dragstart', handleDragStart);
     item.addEventListener('dragenter', handleDragEnter);
@@ -966,8 +956,13 @@ function renderPins() {
     item.addEventListener('drop', handleDrop);
     item.addEventListener('dragend', handleDragEnd);
   });
+}
 
-  // Add inline editing functionality
+// Helper: Attach inline editing event handlers
+function attachEditingHandlers() {
+  const list = cachedElements.pinsList;
+  if (!list) return;
+
   list.querySelectorAll('.pin-comment-wrapper, .pin-text-wrapper').forEach(wrapper => {
     const editableField = wrapper.querySelector('.pin-editable-field');
     const editIcon = wrapper.querySelector('.edit-icon');
@@ -979,6 +974,43 @@ function renderPins() {
       editIcon.addEventListener('click', startEdit);
     }
   });
+}
+
+// Render the pins list
+function renderPins() {
+  // Clear any pending animations
+  clearPendingAnimations();
+
+  const list = cachedElements.pinsList;
+  if (!list) return;
+
+  // Update button states
+  updateButtonStates();
+
+  // Handle empty state
+  if (pins.length === 0) {
+    renderEmptyState();
+    addInlineCreationUI();
+    return;
+  }
+
+  // Clear list and prepare for rendering
+  list.innerHTML = '';
+  const currentChatId = getCurrentChatId();
+  const fragment = document.createDocumentFragment();
+
+  // Create all pin items
+  pins.forEach((pin, index) => {
+    const pinItem = createPinItem(pin, index, currentChatId);
+    fragment.appendChild(pinItem);
+  });
+
+  // Single DOM append for performance
+  list.appendChild(fragment);
+
+  // Attach event handlers
+  attachDragAndDropHandlers();
+  attachEditingHandlers();
 
   // Add inline creation UI
   addInlineCreationUI();
