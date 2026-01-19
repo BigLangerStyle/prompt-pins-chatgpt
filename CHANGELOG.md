@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [1.2.0] - 2026-01-18
+## [1.2.0] - 2026-01-18 to 2026-01-19
 
 ### Added
 - **Cross-chat pin naming** - Pins from other conversations now show the actual chat name
@@ -163,6 +163,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - **Login Layout Issue** - Sidebar no longer covers the "Log in" button when not logged in
+  - New users now default to expanded sidebar after first login to showcase features
+  - Sidebar automatically expands for new users who log in for the first time
+- **Header Alignment** - Prompt Pins header now properly aligns with ChatGPT's header height
+  - Reduced vertical padding from 16px to 12px for better visual alignment
 - **Chrome double panel issue** - Fixed bug where two sidebar panels would appear in Chrome
   - Added duplicate prevention check in `createSidebar()` function
   - Created `initializeSidebar()` function to intelligently handle sidebar creation and reconnection
@@ -181,6 +185,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Saves user's preference before auto-collapsing
   - Syncs `sidebarOpen` variable with visual state to prevent double-click bug
   - Restores original preference after login
+  - **NEW:** Defaults to expanded sidebar for new users (when `savedPreferenceBeforeLogin === null`)
+  - New users see expanded sidebar after first login to discover features
+- Header alignment fix:
+  - Updated `.pins-header` CSS padding from `16px` to `12px 16px`
+  - Reduces vertical padding while maintaining horizontal spacing
+  - Better aligns with ChatGPT's header height
 - Added state tracking variables:
   - `wasOnLoginPage` - Tracks if user was on login page
   - `manualOverrideOnLogin` - Respects user manually expanding sidebar on login page

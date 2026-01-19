@@ -1,344 +1,220 @@
-# Prompt Pins for ChatGPT
-
-A browser extension for Firefox and Chrome that lets you save questions and prompts for later use without breaking your conversational flow with ChatGPT.
-
-## Features
-
-- **Pin Any Text**: Highlight text in a ChatGPT conversation and right-click to pin it
-- **Manual Pin Creation**: Create pins directly from the sidebar with the "+ New" button (no text selection needed)
-- **Cross-Chat Context**: Pins from other conversations display the source chat name for better context
-- **Inline Editing**: Click on pin text or comments to edit them directly in the sidebar (Enter to save, Shift+Enter for new line)
-- **Visual Feedback**: Newly created pins show a subtle highlight animation for confirmation
-- **Keyboard Shortcuts**: Use hotkeys for quick pin creation and usage (works with or without text selected)
-- **Smart Queue System**: Automatically queues pins if ChatGPT is busy, submits when ready
-- **Add Context**: Optionally add a note or comment to each pin
-- **Quick Access**: Use the "Next Pin" button to automatically load and submit your next question
-- **Drag to Reorder**: Organize your pins by dragging them into your preferred order
-- **Clear All Pins**: Remove all pins at once with a confirmation dialog to prevent accidents
-- **Persistent Storage**: Pins are saved locally and persist across browser sessions
-- **Dark Theme**: Matches ChatGPT's interface with a clean, modern design
-- **Auto-Submit**: Automatically submits prompts when you click "Use" or "Next Pin"
-- **Branded Minimize Button**: Prompt Pins icon on the minimized sidebar for easy access and brand recognition
-- **Keyboard Shortcuts Help**: [?] icon displays all keyboard shortcuts on hover, plus contextual tooltips on buttons
-
-## Browser Support
-
-- **Firefox**: Full support (Manifest V2)
-- **Chrome/Edge**: Full support (Manifest V3)
-
-## Known Issues
-
-- ⚠️ **Chrome/Edge Keyboard Shortcuts**: Shortcuts like `Ctrl+Shift+P`, `Ctrl+Shift+S`, and `Ctrl+Shift+N` are currently non-functional in the Chrome/Edge version. This is a known issue being investigated.
-- 🐛 **Double Panel (Chrome)**: Two sidebar panels may appear in Chrome. Minimizing one reveals another behind it.
-
-
-## Installation
-
-### From Browser Extension Stores (Recommended)
-
-**Firefox:**
-1. Visit the [Firefox Add-ons page](https://addons.mozilla.org/en-US/firefox/addon/prompt-pins-for-chatgpt/)
-2. Click "Add to Firefox"
-3. Visit [ChatGPT](https://chatgpt.com) and start using Prompt Pins!
-
-**Chrome/Edge:**
-1. Visit the [Chrome Web Store page](https://chromewebstore.google.com/detail/prompt-pins-for-chatgpt/jnackadbafdgahcamdegljmjckfnppoi)
-2. Click "Add to Chrome" or "Get" (for Edge)
-3. Visit [ChatGPT](https://chatgpt.com) and start using Prompt Pins!
-
-### From Source (for developers)
-
-#### Building the Extension
-
-1. Clone this repository:
-   ```bash
-   git clone https://github.com/BigLangerStyle/prompt-pins-chatgpt.git
-   cd prompt-pins-chatgpt
-   ```
-
-2. Build for your browser:
-   ```bash
-   # Build for Firefox
-   npm run build:firefox
-   
-   # Build for Chrome
-   npm run build:chrome
-   
-   # Build for both
-   npm run build:all
-   ```
-
-#### Loading in Firefox
-
-1. Build the Firefox version: `npm run build:firefox`
-2. Open Firefox and navigate to `about:debugging`
-3. Click "This Firefox" in the left sidebar
-4. Click "Load Temporary Add-on"
-5. Select `manifest.json` from the `build/firefox/` directory
-
-#### Loading in Chrome/Edge
-
-1. Build the Chrome version: `npm run build:chrome`
-2. Open Chrome and navigate to `chrome://extensions`
-3. Enable "Developer mode" (toggle in top right)
-4. Click "Load unpacked"
-5. Select the `build/chrome/` directory
-
-## Keyboard Shortcuts
-
-**💡 Tip:** Hover over the **[?]** icon in the sidebar header to see all shortcuts for your browser!
-
-### Firefox Shortcuts
-
-- **`Ctrl+Alt+P`** (or `Cmd+Alt+P` on Mac) - Create a pin from selected text, or open manual creation if no text selected
-- **`Ctrl+Alt+S`** (or `Cmd+Alt+S` on Mac) - Send selected text immediately with "Expand on:" prefix
-- **`Ctrl+Alt+N`** (or `Cmd+Alt+N` on Mac) - Use the next pin in queue
-
-### Chrome/Edge Shortcuts
-
-- **`Ctrl+Shift+K`** (or `Cmd+Shift+K` on Mac) - Create a pin from selected text, or open manual creation if no text selected
-- **`Ctrl+Shift+L`** (or `Cmd+Shift+L` on Mac) - Send selected text immediately with "Expand on:" prefix
-- **`Ctrl+Shift+U`** (or `Cmd+Shift+U` on Mac) - Use the next pin in queue
-
-> **Note:** Chrome has conflicts with some shortcuts (Ctrl+Shift+P opens Dev Tools command palette, Ctrl+Shift+N opens Incognito, Ctrl+Shift+J opens Console), so Chrome/Edge uses K, L, U keys instead of P, S, N.
-
-### Customizing Shortcuts
-
-**Firefox:**
-1. Navigate to `about:addons`
-2. Click the gear icon and select "Manage Extension Shortcuts"
-3. Find "Prompt Pins for ChatGPT" and modify the shortcuts to your preference
-
-**Chrome:**
-1. Navigate to `chrome://extensions/shortcuts`
-2. Find "Prompt Pins for ChatGPT"
-3. Click the edit icon to customize shortcuts
-
-## Smart Queue System
-
-If you try to use a pin while ChatGPT is generating a response, the extension intelligently handles this:
-
-1. **Automatic Queuing**: The pin enters a queued state instead of failing
-2. **Visual Feedback**: Shows "⏳ Queued - waiting for ChatGPT to finish..." badge
-3. **Other Pins Disabled**: All other "Use" buttons become disabled while a pin is queued
-4. **Cancel Option**: Click "Cancel" on the queued pin to abort and clear the input
-5. **Auto-Submit**: Extension watches for ChatGPT to finish, then auto-submits the queued pin
-6. **Auto-Delete**: Queued pin is deleted after successful submission
-
-This ensures you never lose a pin due to timing issues and creates a smooth workflow!
-
-## Privacy
-
-**No data collection. Period.**
-
-All pins are stored locally in your browser. Nothing is transmitted to external servers. No analytics, no tracking, no telemetry.
-
-See [PRIVACY.md](PRIVACY.md) for full details.
-
-## Usage
-
-### Creating Pins
-
-**Right-click menu:**
-1. Highlight any text in a ChatGPT conversation
-2. Right-click and select **"Pin prompt"**
-3. Optionally add a comment for context
-4. Click **"Save Pin"** (or press Enter)
-
-**Keyboard shortcut:**
-1. Highlight any text in a ChatGPT conversation
-2. Press the keyboard shortcut for your browser (see Keyboard Shortcuts section)
-3. Optionally add a comment for context
-4. Click **"Save Pin"** (or press Enter)
-
-### Sending Text Immediately
-
-1. Highlight any text in a ChatGPT conversation
-2. Press the send-immediately shortcut for your browser
-3. Text is sent to ChatGPT with "Expand on:" prefix without creating a pin
-
-### Using Pins
-
-- **Next Pin Button**: Click "Next Pin ->" to use the first pin in your queue
-- **Keyboard**: Press the use-next-pin shortcut for your browser
-- **Individual Use**: Click "Use" on any specific pin
-- If ChatGPT is busy, the pin automatically queues and submits when ready
-- Pins are automatically submitted to ChatGPT and removed after use
-
-### Managing Your Pins
-
-- **Reorder**: Drag and drop pins to organize them
-- **Delete**: Click the × button to remove a pin
-- **Clear All**: Click "Clear" button to remove all pins (with confirmation)
-- **Collapse**: Click the - button to hide the sidebar
-- **Cancel Queue**: If a pin is queued, click "Cancel" to abort
-
-## Permissions Explained
-
-- **storage**: Save your pins locally in the browser
-- **contextMenus**: Add "Pin prompt" to the right-click menu
-- **Access to chat.openai.com and chatgpt.com**: Required to interact with ChatGPT's interface
-
-## Development
-
-### Project Structure
-
-```
-prompt-pins-chatgpt/
-├── src/                    # Shared source code
-│   ├── background.js       # Background service worker
-│   ├── content.js          # Content script (runs on ChatGPT)
-│   ├── sidebar.css         # Sidebar styles
-│   └── icons/              # Extension icons
-├── firefox/                # Firefox-specific files
-│   ├── manifest.json       # Firefox manifest (Manifest V2)
-│   └── .web-ext-config.cjs # web-ext configuration
-├── chrome/                 # Chrome-specific files
-│   └── manifest.json       # Chrome manifest (Manifest V3)
-├── scripts/                # Build scripts
-│   ├── build-firefox.js    # Firefox build script
-│   ├── build-chrome.js     # Chrome build script
-│   └── clean.js            # Clean build directory
-├── build/                  # Build output (gitignored)
-│   ├── firefox/            # Built Firefox extension
-│   └── chrome/             # Built Chrome extension
-└── package.json            # NPM scripts
-```
-
-### Build Scripts
-
-- `npm run build:firefox` - Build Firefox extension to `build/firefox/`
-- `npm run build:chrome` - Build Chrome extension to `build/chrome/`
-- `npm run build:all` - Build both versions
-- `npm run clean` - Clean build directory
-- `npm run dev:firefox` - Run Firefox extension in development mode
-
-### Technical Details
-
-- **Language**: Vanilla JavaScript (no frameworks)
-- **Size**: ~28KB total
-- **Dependencies**: None (uses browser native APIs only)
-- **Content script**: Only runs on ChatGPT domains
-- **Security**: No external network requests, uses `textContent` (not `innerHTML`)
-- **API Compatibility**: Build system automatically converts `browser.*` to `chrome.*` for Chrome
-
-## Screenshots
-
-### Pin Creation via Context Menu
-
-Right-click on selected text and choose "Pin prompt" from the context menu:
-
-![Context Menu](screenshots/screenshot-context-menu-chrome.png)
-
-### Pin Creation Dialog
-
-Add optional notes or comments to your pin:
-
-![Create Pin Dialog](screenshots/screenshot-create-pin-dialog-chrome.png)
-
-### Pin Management Sidebar
-
-View and manage all your saved pins in the sidebar:
-
-![Sidebar with Pins](screenshots/screenshot-sidebar-pins-chrome.png)
-
-## Contributing
-
-Suggestions and bug reports are welcome!
-
-- **Report a Bug**: [Open an issue](https://github.com/BigLangerStyle/prompt-pins-chatgpt/issues)
-- **Suggest a Feature**: [Open an issue](https://github.com/BigLangerStyle/prompt-pins-chatgpt/issues)
-
-## License
-
-MIT License - see [LICENSE](LICENSE) file for details
-
-Copyright (c) 2025 Prompt Pins Contributors
-
-## Version History
-
-
-### 1.2.0 (January 18, 2026)
-
-**New Features:**
-
-- **Auto-collapse behavior** - Sidebar now automatically expands and collapses when creating pins
-  - When sidebar is collapsed and you create a pin (via context menu or keyboard shortcut), sidebar briefly expands
-  - New pin highlight animation plays (1.5 seconds) so you can see your pin was created
-  - Sidebar automatically collapses back after 2 seconds
-  - If you manually toggle the sidebar during this time, auto-collapse is cancelled
-  - Only triggers when sidebar was initially collapsed - respects your preference
-  - Doesn't save the temporary expansion - maintains your original collapsed state
-  - Provides smooth visual feedback without disrupting your layout
-
-- **Welcome animation for new users** - First-time logged-out users get a brief onboarding experience
-  - Sidebar expands for 2.5 seconds on first visit to show the interface
-  - Automatically collapses to reveal the login button
-  - Toggle button pulses 2 times with green glow to show where the sidebar went
-  - Only plays once per user (stored in browser.storage.local)
-  - Only triggers for logged-out users
-
-**Critical Fixes:**
-
-- **Login button coverage issue resolved**
-  - Sidebar automatically collapses when login page is detected
-  - Automatically restores user's saved sidebar state after successful login
-  - Runs real-time watcher to detect login state changes
-  - Preserves user's sidebar preference across login/logout
-
-- **NEW:** Pin highlight animation - Visual feedback when creating new pins
-  - Subtle glow and scale pulse animation (1.5 seconds)
-  - Automatically scrolls to show new pin if off-screen
-  - Smooth, non-disruptive effect that doesn't interfere with drag-and-drop
-  - Works with all pin creation methods (context menu, keyboard shortcuts)
-  - Robust timeout tracking prevents interruption during rapid user actions
-  - Proper cleanup prevents memory leaks
-- **CRITICAL FIX:** Chrome/Edge keyboard shortcuts now working
-  - Changed to non-conflicting keys: Ctrl+Shift+K/L/U (was P/S/N)
-  - Ctrl+Shift+P conflicted with Chrome Dev Tools Command Palette
-  - Ctrl+Shift+N conflicted with Chrome's "New Incognito Window"
-  - Ctrl+Shift+J conflicted with Chrome's "Open Console"
-- **NEW:** Added explicit Mac keyboard shortcuts to both browsers
-  - Firefox: Cmd+Alt+P/S/N on Mac
-  - Chrome/Edge: Cmd+Shift+K/L/U on Mac
-- **NEW:** Branded minimize button - Replaced generic "+" with Prompt Pins icon for better brand recognition
-- **NEW:** Edit existing pins - Click edit button to modify pin text and comments
-- **IMPROVED:** Comprehensive logging for debugging keyboard shortcuts
-  - Track command flow from background to content script
-  - Detailed console output at each step
-  - Better error messages for troubleshooting
-- **IMPROVED:** Enhanced error handling in command pipeline
-
-### 1.1.1 (January 11, 2025)
-
-- **CRITICAL FIX:** Context menu "Pin prompt" now appears reliably after browser restart
-- **FIXED:** Added browser startup listener to recreate context menu when Firefox starts
-- **FIXED:** Firefox minimum version set to 142.0 (supports data_collection_permissions on both desktop and Android)
-- **FIXED:** Icon paths corrected in Firefox manifest
-- **FIXED:** Chrome keyboard shortcuts changed to Ctrl+Shift (Chrome doesn't support Ctrl+Alt)
-- **IMPROVED:** Better error handling and logging for debugging
-- **NEW:** Chrome/Edge support with Manifest V3
-- **NEW:** Monorepo structure with automated build system
-
-### 1.1.0 (January 11, 2025)
-
-- **NEW:** Keyboard shortcuts
-  - `Ctrl+Alt+P` - Create a pin from selected text
-  - `Ctrl+Alt+S` - Send selected text immediately with "Expand on:" prefix
-  - `Ctrl+Alt+N` - Use the next pin in queue
-- **NEW:** Smart Queue System - Automatically queues pins when ChatGPT is busy
-- **NEW:** Clear All Pins feature with confirmation dialog
-- **NEW:** Chat-aware pins - Pins track which chat they came from and are visually distinguished when viewing in different chats
-- **IMPROVED:** Pins without comments now use "Expand on:" prefix
-- **IMPROVED:** Pins with comments use "Regarding:" prefix for better context
-- **IMPROVED:** Code optimization - Eliminated duplication, added helper functions, improved maintainability
-- **FIXED:** Collapsed sidebar button now properly centered and visible
-
-### 1.0.0 (January 7, 2025)
-
-- Initial release
-- Pin creation with optional comments
-- Drag to reorder functionality
-- Auto-submit functionality
-- Dark theme matching ChatGPT
-- Local storage persistence
+# Prompt Pins for ChatGPT
+
+Save questions and prompts for later without breaking your conversation flow. Available for Firefox and Chrome.
+
+[![Firefox Add-on](https://img.shields.io/badge/Firefox-Add--on-orange?logo=firefox)](https://addons.mozilla.org/en-US/firefox/addon/prompt-pins-for-chatgpt/)
+[![Chrome Web Store](https://img.shields.io/badge/Chrome-Extension-blue?logo=googlechrome)](https://chromewebstore.google.com/detail/prompt-pins-for-chatgpt/jnackadbafdgahcamdegljmjckfnppoi)
+
+## What It Does
+
+Prompt Pins lets you bookmark questions and prompts while chatting with ChatGPT. Pin text you want to explore later, organize your thoughts in a queue, and submit them when you're ready—all without losing your place in the conversation.
+
+**Key Benefits:**
+- Save interesting tangents without derailing your current conversation
+- Build a queue of follow-up questions as they come to you
+- Organize prompts by priority with drag-and-drop
+- Never forget that perfect follow-up question
+
+## Installation
+
+### Quick Install (Recommended)
+
+**Firefox:** [Install from Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/prompt-pins-for-chatgpt/)
+
+**Chrome/Edge:** [Install from Chrome Web Store](https://chromewebstore.google.com/detail/prompt-pins-for-chatgpt/jnackadbafdgahcamdegljmjckfnppoi)
+
+### Developer Install
+
+See the [Development](#development) section below for building from source.
+
+## How to Use
+
+### Creating Pins
+
+**Method 1: Right-click menu**
+1. Highlight text in your ChatGPT conversation
+2. Right-click → **"Pin prompt"**
+3. Add an optional note for context
+4. Press Enter or click Save
+
+**Method 2: Keyboard shortcut**
+- Firefox: `Ctrl+Alt+P` (Mac: `Cmd+Alt+P`)
+- Chrome: `Ctrl+Shift+K` (Mac: `Cmd+Shift+K`)
+
+**Method 3: Manual creation**
+- Click the **"+ New"** button in the sidebar
+- Type your prompt directly
+
+### Using Your Pins
+
+- **Click "Use"** on any pin to submit it to ChatGPT
+- **Click "Next Pin →"** to use the first pin in your queue
+- **Drag pins** to reorder them by priority
+- **Click ×** to delete individual pins
+- **Click "Clear"** to remove all pins
+
+### Quick Send (No Pin)
+
+Want to submit text immediately without saving it?
+- Firefox: `Ctrl+Alt+S` (Mac: `Cmd+Alt+S`)
+- Chrome: `Ctrl+Shift+L` (Mac: `Cmd+Shift+L`)
+
+The text will be sent with "Expand on:" prefix without creating a pin.
+
+## Features
+
+- **Smart Queue System** - If ChatGPT is busy, pins automatically queue and submit when ready
+- **Cross-Chat Context** - Pins remember which conversation they came from
+- **Inline Editing** - Click any pin to edit its text or comment
+- **Persistent Storage** - All pins are saved locally and survive browser restarts
+- **Keyboard-Friendly** - Full keyboard shortcut support with in-app help ([?] icon)
+- **Privacy-First** - No data leaves your browser. Ever.
+
+## Privacy
+
+**Zero data collection.** All pins are stored locally in your browser using standard extension storage APIs. Nothing is transmitted to external servers. No analytics, no tracking, no telemetry.
+
+See [PRIVACY.md](PRIVACY.md) for complete details.
+
+## Keyboard Shortcuts
+
+**💡 Tip:** Click the **[?]** icon in the sidebar to see all shortcuts for your browser.
+
+### Firefox
+- `Ctrl+Alt+P` (Mac: `Cmd+Alt+P`) - Create pin or open manual entry
+- `Ctrl+Alt+S` (Mac: `Cmd+Alt+S`) - Send selected text immediately
+- `Ctrl+Alt+N` (Mac: `Cmd+Alt+N`) - Use next pin
+
+### Chrome/Edge
+- `Ctrl+Shift+K` (Mac: `Cmd+Shift+K`) - Create pin or open manual entry
+- `Ctrl+Shift+L` (Mac: `Cmd+Shift+L`) - Send selected text immediately
+- `Ctrl+Shift+U` (Mac: `Cmd+Shift+U`) - Use next pin
+
+> **Note:** Chrome shortcuts differ to avoid conflicts with built-in Chrome shortcuts.
+
+### Customizing Shortcuts
+
+**Firefox:** `about:addons` → Gear icon → "Manage Extension Shortcuts"
+
+**Chrome:** `chrome://extensions/shortcuts` → Find "Prompt Pins"
+
+## Known Issues
+
+- **Chrome Double Panel:** Occasionally two sidebar panels may appear. Minimizing one reveals the other. Refresh the page if this occurs.
+
+## Screenshots
+
+### Creating a Pin
+![Context Menu](screenshots/screenshot-context-menu-chrome.png)
+
+### Managing Your Pins
+![Sidebar with Pins](screenshots/screenshot-sidebar-pins-chrome.png)
+
+## Development
+
+### Building from Source
+
+```bash
+# Clone the repository
+git clone https://github.com/BigLangerStyle/prompt-pins-chatgpt.git
+cd prompt-pins-chatgpt
+
+# Build for Firefox
+npm run build:firefox
+
+# Build for Chrome
+npm run build:chrome
+
+# Build both
+npm run build:all
+```
+
+### Loading Locally
+
+**Firefox:**
+1. Navigate to `about:debugging`
+2. Click "This Firefox" → "Load Temporary Add-on"
+3. Select `manifest.json` from `build/firefox/`
+
+**Chrome:**
+1. Navigate to `chrome://extensions`
+2. Enable "Developer mode"
+3. Click "Load unpacked" → Select `build/chrome/`
+
+### Project Structure
+
+```
+src/                    # Shared source code
+├── background.js       # Background service worker
+├── content.js          # Content script
+├── sidebar.css         # Styles
+└── icons/              # Extension icons
+
+firefox/                # Firefox manifest (V2)
+chrome/                 # Chrome manifest (V3)
+scripts/                # Build automation
+build/                  # Build output (gitignored)
+```
+
+### Tech Stack
+
+- **Language:** Vanilla JavaScript (no frameworks)
+- **Size:** ~28KB total
+- **Dependencies:** Zero external dependencies
+- **Browser APIs:** Native extension APIs only
+- **Security:** No external network requests, sanitized content handling
+
+## Contributing
+
+Found a bug or have a feature idea? [Open an issue](https://github.com/BigLangerStyle/prompt-pins-chatgpt/issues)!
+
+## License
+
+MIT License - See [LICENSE](LICENSE) for details
+
+Copyright (c) 2025 Prompt Pins Contributors
+
+---
+
+## Release Notes
+
+### Version 1.2.0 (January 18-19, 2026)
+
+**New Features**
+- Auto-collapse behavior when creating pins with collapsed sidebar
+- Welcome animation for first-time users
+- Pin highlight animation for visual feedback
+- Inline editing of pin text and comments
+- Cross-chat pin naming shows source conversation
+- Branded minimize button with Prompt Pins icon
+- Keyboard shortcuts help UI with [?] button
+
+**Bug Fixes**
+- Login page sidebar no longer covers login button
+- New users now see expanded sidebar after first login
+- Header now properly aligns with ChatGPT's header
+- Chrome keyboard shortcuts working (changed to K/L/U from P/S/N)
+- Mac keyboard shortcuts added for both browsers
+
+### Version 1.1.1 (January 11, 2025)
+
+- Fixed context menu reliability after browser restart
+- Added Chrome/Edge support with Manifest V3
+- Fixed icon paths in Firefox manifest
+- Improved error handling and logging
+
+### Version 1.1.0 (January 11, 2025)
+
+- Added keyboard shortcuts
+- Implemented smart queue system
+- Added clear all pins feature
+- Chat-aware pins with visual distinction
+- Improved prompt prefixes ("Expand on:" / "Regarding:")
+
+### Version 1.0.0 (January 7, 2025)
+
+- Initial release
+- Pin creation with optional comments
+- Drag to reorder functionality
+- Auto-submit functionality
+- Dark theme matching ChatGPT
