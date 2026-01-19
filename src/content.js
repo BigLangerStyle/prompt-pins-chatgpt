@@ -1016,25 +1016,18 @@ function renderPins() {
   addInlineCreationUI();
 }
 
-// Add inline pin creation UI (+ New button and inline form)
-function addInlineCreationUI() {
-  const list = cachedElements.pinsList;
-  if (!list) return;
-
-  // Remove existing inline UI if present
-  const existingBtn = document.getElementById('inline-new-pin-btn');
-  const existingForm = document.getElementById('inline-pin-form');
-  if (existingBtn) existingBtn.remove();
-  if (existingForm) existingForm.remove();
-
-  // Create "+ New" button (fixed to bottom right of sidebar)
+// Helper: Create the "+ New" button element
+function createNewPinButton() {
   const newBtn = document.createElement('button');
   newBtn.id = 'inline-new-pin-btn';
   newBtn.className = 'inline-new-pin-btn';
   newBtn.textContent = '+ New';
   newBtn.title = `Create a new pin manually (${SHORTCUTS.createPin} without selection)`;
+  return newBtn;
+}
 
-  // Create inline form (hidden initially, appears in pins list)
+// Helper: Create the inline pin creation form
+function createInlinePinForm() {
   const formContainer = document.createElement('div');
   formContainer.id = 'inline-pin-form';
   formContainer.className = 'inline-pin-form';
@@ -1063,63 +1056,82 @@ function addInlineCreationUI() {
   formContainer.appendChild(textarea);
   formContainer.appendChild(buttons);
 
-  // Event handlers
-  newBtn.addEventListener('click', () => {
-    // Hide empty state message if present
+  return { formContainer, textarea, cancelBtn, saveBtn };
+}
+
+// Helper: Show the inline form and hide empty state
+function showInlineForm(formContainer, textarea) {
+  const list = cachedElements.pinsList;
+  
+  // Hide empty state message if present
+  const emptyState = list.querySelector('.empty-state');
+  if (emptyState) {
+    emptyState.style.display = 'none';
+  }
+
+  // Show form
+  formContainer.style.display = 'block';
+  textarea.value = '';
+  textarea.focus();
+}
+
+// Helper: Hide the inline form and restore empty state if needed
+function hideInlineForm(formContainer) {
+  const list = cachedElements.pinsList;
+  formContainer.style.display = 'none';
+
+  // Show empty state message if no pins
+  if (pins.length === 0) {
     const emptyState = list.querySelector('.empty-state');
     if (emptyState) {
-      emptyState.style.display = 'none';
+      emptyState.style.display = 'block';
     }
+  }
+}
 
-    // Show form
-    formContainer.style.display = 'block';
-    textarea.value = '';
-    textarea.focus();
-  });
+// Helper: Save a new pin from the inline form
+function saveInlinePin(textarea, hideForm) {
+  const text = textarea.value.trim();
+  if (!text) {
+    hideForm();
+    return;
+  }
 
-  const hideForm = () => {
-    formContainer.style.display = 'none';
+  const chatId = getCurrentChatId();
+  const chatTitle = getCurrentChatTitle();
 
-    // Show empty state message if no pins
-    if (pins.length === 0) {
-      const emptyState = list.querySelector('.empty-state');
-      if (emptyState) {
-        emptyState.style.display = 'block';
-      }
-    }
+  const newPin = {
+    text: text,
+    comment: null,
+    timestamp: Date.now(),
+    chatId: chatId,
+    chatTitle: chatTitle,
+    isManuallyCreated: true // Flag for manual creation
   };
 
+  pins.push(newPin);
+  savePins();
+  renderPins();
+
+  // Highlight the newly created pin
+  const newPinIndex = pins.length - 1;
+  highlightNewPin(newPinIndex);
+
+  hideForm();
+}
+
+// Helper: Setup event handlers for inline form
+function setupInlineFormHandlers(newBtn, formContainer, textarea, cancelBtn, saveBtn) {
+  const hideForm = () => hideInlineForm(formContainer);
+
+  // Show form when + New button clicked
+  newBtn.addEventListener('click', () => showInlineForm(formContainer, textarea));
+
+  // Cancel button
   cancelBtn.addEventListener('click', hideForm);
 
-  saveBtn.addEventListener('click', () => {
-    const text = textarea.value.trim();
-    if (!text) {
-      hideForm();
-      return;
-    }
-
-    const chatId = getCurrentChatId();
-    const chatTitle = getCurrentChatTitle();
-
-    const newPin = {
-      text: text,
-      comment: null,
-      timestamp: Date.now(),
-      chatId: chatId,
-      chatTitle: chatTitle,
-      isManuallyCreated: true // Flag for manual creation
-    };
-
-    pins.push(newPin);
-    savePins();
-    renderPins();
-
-    // Highlight the newly created pin
-    const newPinIndex = pins.length - 1;
-    highlightNewPin(newPinIndex);
-
-    hideForm();
-  });
+  // Save button
+  saveBtn.addEventListener('click', () => saveInlinePin(textarea, hideForm));
 
   // Auto-expand textarea as user types
   textarea.addEventListener('input', () => {
@@ -1136,13 +1148,31 @@ function addInlineCreationUI() {
       hideForm();
     }
   });
+}
+
+// Add inline pin creation UI (+ New button and inline form)
+function addInlineCreationUI() {
+  const list = cachedElements.pinsList;
+  if (!list) return;
+
+  // Remove existing inline UI if present
+  const existingBtn = document.getElementById('inline-new-pin-btn');
+  const existingForm = document.getElementById('inline-pin-form');
+  if (existingBtn) existingBtn.remove();
+  if (existingForm) existingForm.remove();
+
+  // Create UI elements
+  const newBtn = createNewPinButton();
+  const { formContainer, textarea, cancelBtn, saveBtn } = createInlinePinForm();
+
+  // Setup event handlers
+  setupInlineFormHandlers(newBtn, formContainer, textarea, cancelBtn, saveBtn);
 
   // Append to DOM
   const sidebar = cachedElements.sidebar;
   if (sidebar) {
     sidebar.appendChild(newBtn);
   }
-
   list.appendChild(formContainer);
 }
 
