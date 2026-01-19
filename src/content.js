@@ -1925,6 +1925,7 @@ browser.runtime.onMessage.addListener((message) => {
 
 // Watch for URL changes (when user switches chats)
 let lastChatId = getCurrentChatId();
+let chatChangeInterval = null;
 
 function checkForChatChange() {
   const currentChatId = getCurrentChatId();
@@ -1935,8 +1936,25 @@ function checkForChatChange() {
   }
 }
 
-// Check for chat changes periodically
-setInterval(checkForChatChange, TIMINGS.CHAT_CHANGE_CHECK);
+// Start watching for chat changes
+function startChatChangeWatcher() {
+  // Clear any existing interval first
+  if (chatChangeInterval) {
+    clearInterval(chatChangeInterval);
+  }
+  chatChangeInterval = setInterval(checkForChatChange, TIMINGS.CHAT_CHANGE_CHECK);
+}
+
+// Stop watching for chat changes (cleanup)
+function stopChatChangeWatcher() {
+  if (chatChangeInterval) {
+    clearInterval(chatChangeInterval);
+    chatChangeInterval = null;
+  }
+}
+
+// Start watching for chat changes on load
+startChatChangeWatcher();
 
 // ============================================================================
 // INITIALIZATION
