@@ -2,6 +2,16 @@
 // CONSTANTS
 // ============================================================================
 
+// Debug mode - set to true for development debugging
+const DEBUG = false;
+
+// Debug logging helper - only logs when DEBUG is true
+function debugLog(...args) {
+  if (DEBUG) {
+    console.log(...args);
+  }
+}
+
 // Browser and platform detection
 const IS_CHROME = typeof chrome !== 'undefined' && typeof chrome.runtime !== 'undefined' && !navigator.userAgent.includes('Firefox');
 const IS_MAC = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
@@ -188,7 +198,7 @@ function isLoginPage() {
   // Method 1: Check URL - if we have a chat ID, definitely logged in
   const hasChatId = getCurrentChatId() !== null;
   if (hasChatId) {
-    console.log('Prompt Pins: Has chat ID - user is logged in');
+    debugLog('Prompt Pins: Has chat ID - user is logged in');
     return false; // Definitely logged in
   }
 
@@ -216,7 +226,7 @@ function isLoginPage() {
   // - OR: No navigation sidebar AND no chat ID AND has input (the pre-login homepage)
   const isOnLoginPage = (hasLoginButton && !hasChatId) || (!hasNavSidebar && !hasChatId && hasInput);
 
-  console.log('Prompt Pins: Login detection -', {
+  debugLog('Prompt Pins: Login detection -', {
     hasChatId,
     hasInput,
     hasLoginButton,
@@ -239,7 +249,7 @@ async function triggerWelcomeAnimation() {
 
   if (!sidebar || !toggle) return;
 
-  console.log('Prompt Pins: Triggering welcome animation');
+  debugLog('Prompt Pins: Triggering welcome animation');
 
   // Mark welcome as seen IMMEDIATELY to prevent double-triggering from interval
   hasSeenWelcome = true;
@@ -266,7 +276,7 @@ async function triggerWelcomeAnimation() {
     toggle.classList.remove('toggle-pulse');
   }, 2000);
 
-  console.log('Prompt Pins: Welcome animation complete');
+  debugLog('Prompt Pins: Welcome animation complete');
 }
 
 
@@ -281,7 +291,7 @@ function handleLoginStateChange() {
   if (isOnLoginPage) {
     // Check if this is a first-time logged-out user who hasn't seen the welcome animation
     if (!hasSeenWelcome) {
-      console.log('Prompt Pins: First-time logged-out user detected, triggering welcome animation');
+      debugLog('Prompt Pins: First-time logged-out user detected, triggering welcome animation');
       triggerWelcomeAnimation();
       return; // Welcome animation will handle the collapse
     }
@@ -291,14 +301,14 @@ function handleLoginStateChange() {
     const hasInlineFormOpen = document.getElementById('inline-pin-form')?.style.display === 'block';
 
     if (hasActiveDialog || hasInlineFormOpen) {
-      console.log('Prompt Pins: Pin creation in progress, deferring auto-collapse');
+      debugLog('Prompt Pins: Pin creation in progress, deferring auto-collapse');
       return; // Don't auto-collapse while user is creating a pin
     }
 
     // On login page - collapse sidebar if not already collapsed
     // BUT respect if user manually expanded it (manual override)
     if (!sidebar.classList.contains('collapsed') && !manualOverrideOnLogin) {
-      console.log('Prompt Pins: Login page detected, auto-collapsing sidebar');
+      debugLog('Prompt Pins: Login page detected, auto-collapsing sidebar');
 
       // Save user's preference before we change it
       savedPreferenceBeforeLogin = sidebarOpen;
@@ -312,7 +322,7 @@ function handleLoginStateChange() {
   } else {
     // Logged in - restore saved sidebar state only if we previously collapsed it for login
     if (wasOnLoginPage && savedPreferenceBeforeLogin !== null) {
-      console.log('Prompt Pins: User logged in, restoring sidebar to saved preference:', savedPreferenceBeforeLogin);
+      debugLog('Prompt Pins: User logged in, restoring sidebar to saved preference:', savedPreferenceBeforeLogin);
 
       // Restore user's original preference
       if (savedPreferenceBeforeLogin) {
@@ -520,7 +530,7 @@ function createHelpButton() {
 function createSidebar() {
   // Check if sidebar already exists (prevent duplicate creation)
   if (document.getElementById('prompt-pins-sidebar')) {
-    console.log('Prompt Pins: Sidebar already exists, skipping creation');
+    debugLog('Prompt Pins: Sidebar already exists, skipping creation');
     return;
   }
 
@@ -610,7 +620,7 @@ function toggleSidebar() {
     clearTimeout(autoCollapseTimeout);
     autoCollapseTimeout = null;
     isAutoExpanded = false;
-    console.log('Prompt Pins: User manually toggled, canceling auto-collapse');
+    debugLog('Prompt Pins: User manually toggled, canceling auto-collapse');
   }
 
   sidebarOpen = !sidebarOpen;
@@ -624,7 +634,7 @@ function toggleSidebar() {
     // If user manually expands on login page, set override flag
     if (isLoginPage()) {
       manualOverrideOnLogin = true;
-      console.log('Prompt Pins: User manually expanded sidebar on login page');
+      debugLog('Prompt Pins: User manually expanded sidebar on login page');
     }
   } else {
     sidebar.classList.add('collapsed');
@@ -645,7 +655,7 @@ function autoExpandSidebar() {
 
   if (!sidebar || !toggle) return;
 
-  console.log('Prompt Pins: Auto-expanding sidebar for pin creation');
+  debugLog('Prompt Pins: Auto-expanding sidebar for pin creation');
 
   // Visually expand the sidebar (but don't change sidebarOpen state or save)
   sidebar.classList.remove('collapsed');
@@ -660,7 +670,7 @@ function autoCollapseSidebar() {
 
   if (!sidebar || !toggle || !isAutoExpanded) return;
 
-  console.log('Prompt Pins: Auto-collapsing sidebar back to original state');
+  debugLog('Prompt Pins: Auto-collapsing sidebar back to original state');
 
   // Collapse the sidebar back (restore visual state without saving)
   sidebar.classList.add('collapsed');
@@ -1830,7 +1840,7 @@ function deletePin(index) {
 
 // Listen for messages from background script
 browser.runtime.onMessage.addListener((message) => {
-  console.log("Prompt Pins: Message received in content script:", message);
+  debugLog("Prompt Pins: Message received in content script:", message);
 
   if (message.action === 'createPin') {
     // Context menu: create pin from selected text
@@ -1838,28 +1848,28 @@ browser.runtime.onMessage.addListener((message) => {
     return Promise.resolve({success: true});
   } else if (message.action === 'create-pin') {
     // Keyboard shortcut: Ctrl+Shift+K - create pin from current selection
-    console.log("Prompt Pins: Create pin shortcut triggered");
+    debugLog("Prompt Pins: Create pin shortcut triggered");
     const selectedText = getSelectedText();
     if (selectedText) {
-      console.log("Prompt Pins: Text selected, creating pin with context");
+      debugLog("Prompt Pins: Text selected, creating pin with context");
       createPin(selectedText);
     } else {
-      console.log("Prompt Pins: No text selected, opening manual creation form");
+      debugLog("Prompt Pins: No text selected, opening manual creation form");
       createPin(''); // Empty string triggers manual creation
     }
     return Promise.resolve({success: true});
   } else if (message.action === 'send-immediately') {
     // Keyboard shortcut: Ctrl+Shift+L - send selected text immediately
-    console.log("Prompt Pins: Send immediately shortcut triggered");
+    debugLog("Prompt Pins: Send immediately shortcut triggered");
     sendImmediately();
     return Promise.resolve({success: true});
   } else if (message.action === 'use-next-pin') {
     // Keyboard shortcut: Ctrl+Shift+U - use next pin
-    console.log("Prompt Pins: Use next pin shortcut triggered");
+    debugLog("Prompt Pins: Use next pin shortcut triggered");
     if (pins.length > 0) {
       usePin(0, true);
     } else {
-      console.log("Prompt Pins: No pins available");
+      debugLog("Prompt Pins: No pins available");
     }
     return Promise.resolve({success: true});
   }
@@ -1897,7 +1907,7 @@ async function initializeSidebar() {
   const existingSidebar = document.getElementById('prompt-pins-sidebar');
 
   if (existingSidebar) {
-    console.log('Prompt Pins: Reconnecting to existing sidebar');
+    debugLog('Prompt Pins: Reconnecting to existing sidebar');
 
     // Reconnect to cached elements
     cachedElements.sidebar = existingSidebar;

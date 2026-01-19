@@ -1,3 +1,13 @@
+// Debug mode - set to true for development debugging
+const DEBUG = false;
+
+// Debug logging helper - only logs when DEBUG is true
+function debugLog(...args) {
+  if (DEBUG) {
+    console.log(...args);
+  }
+}
+
 // Create context menu item
 function createContextMenu() {
   // Remove any existing menu items to prevent duplicates
@@ -11,7 +21,7 @@ function createContextMenu() {
       if (browser.runtime.lastError) {
         console.error("Prompt Pins: Error creating context menu:", browser.runtime.lastError);
       } else {
-        console.log("Prompt Pins: Context menu created successfully");
+        debugLog("Prompt Pins: Context menu created successfully");
       }
     });
   }).catch((error) => {
@@ -21,13 +31,13 @@ function createContextMenu() {
 
 // Create context menu when extension is installed or updated
 browser.runtime.onInstalled.addListener(() => {
-  console.log("Prompt Pins: Extension installed/updated");
+  debugLog("Prompt Pins: Extension installed/updated");
   createContextMenu();
 });
 
 // Create context menu when browser starts
 browser.runtime.onStartup.addListener(() => {
-  console.log("Prompt Pins: Browser started");
+  debugLog("Prompt Pins: Browser started");
   createContextMenu();
 });
 
@@ -47,15 +57,15 @@ browser.contextMenus.onClicked.addListener((info, tab) => {
 
 // Handle keyboard shortcuts
 browser.commands.onCommand.addListener((command) => {
-  console.log("Prompt Pins: Keyboard command received:", command);
+  debugLog("Prompt Pins: Keyboard command received:", command);
   
   browser.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
     if (tabs[0]) {
-      console.log("Prompt Pins: Sending command to tab:", tabs[0].id);
+      debugLog("Prompt Pins: Sending command to tab:", tabs[0].id);
       browser.tabs.sendMessage(tabs[0].id, {
         action: command
       }).then((response) => {
-        console.log("Prompt Pins: Command response:", response);
+        debugLog("Prompt Pins: Command response:", response);
       }).catch((error) => {
         console.error("Prompt Pins: Failed to send command to content script:", error);
       });
