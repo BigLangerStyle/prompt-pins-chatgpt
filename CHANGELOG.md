@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [Unreleased]
+## [1.2.0] - 2026-01-18
 
 ### Added
 - **Inline editing for pin fields** - Edit pin content directly within the sidebar
@@ -19,21 +19,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Highlight animation plays on successful edits for visual confirmation
   - Empty values prevented to maintain data integrity
   - Auto-resizing textarea adapts to content length
-
-### Technical
-- **Inline editing implementation**:
-  - Added `enterEditMode(wrapper)` function to handle edit state
-  - Modified `renderPins()` to distinguish between pin types using `selectedText` field
-  - Created wrapper elements (`.pin-comment-wrapper`, `.pin-text-wrapper`) for editable fields
-  - Added edit icon styling with hover effects and smooth transitions
-  - Implemented keyboard navigation (Enter/Shift+Enter/Escape)
-  - Updated `showCommentInput()` to save `selectedText` field for pin type detection
-  - Added CSS for `.edit-icon`, `.pin-editable-field`, and hover states
-
-
-## [1.2.0] - 2026-01-18
-
-### Added
 - **Welcome animation for new users** - First-time user onboarding for logged-out users
   - Sidebar expands for 2.5 seconds on first visit to show users the interface
   - Automatically collapses to reveal login button
@@ -80,6 +65,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Provides smooth visual feedback without disrupting user's layout preference
 
 ### Technical
+- **Inline editing implementation**:
+  - Added `enterEditMode(wrapper)` function to handle edit state
+  - Modified `renderPins()` to distinguish between pin types using `selectedText` field
+  - Created wrapper elements (`.pin-comment-wrapper`, `.pin-text-wrapper`) for editable fields
+  - Added edit icon styling with hover effects and smooth transitions
+  - Implemented keyboard navigation (Enter/Shift+Enter/Escape)
+  - Updated `showCommentInput()` to save `selectedText` field for pin type detection
+  - Added CSS for `.edit-icon`, `.pin-editable-field`, and hover states
 - **Keyboard shortcuts help UI implementation**:
   - Added browser detection constants: `IS_CHROME` and `IS_MAC` for platform/browser awareness
   - Created `KEYBOARD_SHORTCUTS` configuration object with browser-specific shortcuts
