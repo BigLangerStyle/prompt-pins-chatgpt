@@ -48,9 +48,14 @@ const SELECTORS = {
 };
 
 const TIMINGS = {
-  AUTO_SUBMIT_DELAY: 100,
-  QUEUE_CHECK_INTERVAL: 500,
-  CHAT_CHANGE_CHECK: 500
+  AUTO_SUBMIT_DELAY: 100,              // Delay before auto-submitting input (ms)
+  QUEUE_CHECK_INTERVAL: 500,           // How often to check if ChatGPT finished generating (ms)
+  CHAT_CHANGE_CHECK: 500,              // How often to check for chat navigation (ms)
+  WELCOME_ANIMATION_DELAY: 2500,       // How long to show expanded sidebar in welcome animation (ms)
+  PULSE_ANIMATION_DURATION: 2000,      // Duration of toggle button pulse animation (ms)
+  LOGIN_CHECK_INTERVAL: 1000,          // How often to check login state (ms)
+  HIGHLIGHT_ANIMATION_DURATION: 1500,  // Duration of new pin highlight animation (ms)
+  AUTO_COLLAPSE_DELAY: 2000            // Delay before auto-collapsing sidebar after pin creation (ms)
 };
 
 const UI_TEXT = {
@@ -261,7 +266,7 @@ async function triggerWelcomeAnimation() {
   sidebarOpen = true;
 
   // 2. Wait 2.5 seconds
-  await new Promise(resolve => setTimeout(resolve, 2500));
+  await new Promise(resolve => setTimeout(resolve, TIMINGS.WELCOME_ANIMATION_DELAY));
 
   // 3. Collapse the sidebar
   sidebar.classList.add('collapsed');
@@ -274,7 +279,7 @@ async function triggerWelcomeAnimation() {
   // 5. Remove pulse animation after it completes (2s for both pulses)
   setTimeout(() => {
     toggle.classList.remove('toggle-pulse');
-  }, 2000);
+  }, TIMINGS.PULSE_ANIMATION_DURATION);
 
   debugLog('Prompt Pins: Welcome animation complete');
 }
@@ -365,7 +370,7 @@ function startLoginStateWatcher() {
 
   loginStateCheckInterval = setInterval(() => {
     handleLoginStateChange();
-  }, 1000); // Check every second
+  }, TIMINGS.LOGIN_CHECK_INTERVAL); // Check every second
 }
 
 function stopLoginStateWatcher() {
@@ -1112,7 +1117,7 @@ function highlightNewPin(index) {
         newPinElement.classList.remove('newly-created');
       }
       currentHighlightTimeout = null;
-    }, 1500);
+    }, TIMINGS.HIGHLIGHT_ANIMATION_DURATION);
   }
 }
 
@@ -1550,7 +1555,7 @@ function showCommentInput(selectedText, wasSidebarCollapsed = false) {
       // Wait for highlight animation to complete (1.5s) + small buffer
       autoCollapseTimeout = setTimeout(() => {
         autoCollapseSidebar();
-      }, 2000); // 2 seconds total: 1.5s animation + 0.5s buffer
+      }, TIMINGS.AUTO_COLLAPSE_DELAY); // 2 seconds total: 1.5s animation + 0.5s buffer
     }
 
     cleanup();
