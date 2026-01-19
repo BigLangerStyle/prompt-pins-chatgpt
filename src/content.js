@@ -63,6 +63,7 @@ let isWatchingForSubmit = false;
 let currentHighlightTimeout = null;
 let isAutoExpanded = false; // Track if sidebar was auto-expanded for pin creation
 let autoCollapseTimeout = null; // Track timeout for auto-collapse
+let hasSeenWelcome = false; // Track if user has seen the welcome animation
 
 // Cached DOM elements
 const cachedElements = {
@@ -227,6 +228,48 @@ function isLoginPage() {
   return isOnLoginPage;
 }
 
+// ============================================================================
+// WELCOME ANIMATION FOR FIRST-TIME LOGGED-OUT USERS
+// ============================================================================
+
+// Trigger welcome animation for first-time logged-out users
+async function triggerWelcomeAnimation() {
+  const sidebar = cachedElements.sidebar;
+  const toggle = cachedElements.toggleBtn;
+
+  if (!sidebar || !toggle) return;
+
+  console.log('Prompt Pins: Triggering welcome animation');
+
+  // Mark welcome as seen IMMEDIATELY to prevent double-triggering from interval
+  hasSeenWelcome = true;
+  await saveWelcomeState();
+
+  // 1. Ensure sidebar is expanded
+  sidebar.classList.remove('collapsed');
+  updateToggleButton(toggle, true);
+  sidebarOpen = true;
+
+  // 2. Wait 2.5 seconds
+  await new Promise(resolve => setTimeout(resolve, 2500));
+
+  // 3. Collapse the sidebar
+  sidebar.classList.add('collapsed');
+  updateToggleButton(toggle, false);
+  sidebarOpen = false;
+
+  // 4. Add pulse animation to toggle button
+  toggle.classList.add('toggle-pulse');
+
+  // 5. Remove pulse animation after it completes (2s for both pulses)
+  setTimeout(() => {
+    toggle.classList.remove('toggle-pulse');
+  }, 2000);
+
+  console.log('Prompt Pins: Welcome animation complete');
+}
+
+
 // Auto-collapse sidebar when on login page, restore state when logged in
 function handleLoginStateChange() {
   const isOnLoginPage = isLoginPage();
@@ -236,6 +279,13 @@ function handleLoginStateChange() {
   if (!sidebar || !toggle) return;
 
   if (isOnLoginPage) {
+    // Check if this is a first-time logged-out user who hasn't seen the welcome animation
+    if (!hasSeenWelcome) {
+      console.log('Prompt Pins: First-time logged-out user detected, triggering welcome animation');
+      triggerWelcomeAnimation();
+      return; // Welcome animation will handle the collapse
+    }
+
     // CRITICAL: Don't auto-collapse if user has a pin creation dialog open
     const hasActiveDialog = document.getElementById('pin-comment-input') !== null;
     const hasInlineFormOpen = document.getElementById('inline-pin-form')?.style.display === 'block';
@@ -286,6 +336,7 @@ function handleLoginStateChange() {
     }
   }
 }
+
 
 // Watch for login state changes
 let loginStateCheckInterval = null;
@@ -641,15 +692,23 @@ async function savePins() {
 
 // Load sidebar state from storage
 async function loadSidebarState() {
-  const result = await browser.storage.local.get('sidebarOpen');
+  const result = await browser.storage.local.get(['sidebarOpen', 'hasSeenWelcome']);
   // If no saved state exists, default to true (open)
   sidebarOpen = result.sidebarOpen !== undefined ? result.sidebarOpen : true;
+  // Check if user has seen the welcome animation
+  hasSeenWelcome = result.hasSeenWelcome !== undefined ? result.hasSeenWelcome : false;
 }
 
 // Save sidebar state to storage
 async function saveSidebarState() {
   await browser.storage.local.set({ sidebarOpen });
 }
+
+// Save welcome animation state to storage
+async function saveWelcomeState() {
+  await browser.storage.local.set({ hasSeenWelcome });
+}
+
 
 // ============================================================================
 // PIN RENDERING
