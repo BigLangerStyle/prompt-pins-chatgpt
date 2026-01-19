@@ -802,6 +802,9 @@ function renderPins() {
   // Get current chat ID for comparison
   const currentChatId = getCurrentChatId();
 
+  // Create DocumentFragment for better performance (single reflow instead of N reflows)
+  const fragment = document.createDocumentFragment();
+
   // Create pin items
   pins.forEach((pin, index) => {
     const pinItem = document.createElement('div');
@@ -947,8 +950,12 @@ function renderPins() {
     pinTimestamp.textContent = new Date(pin.timestamp).toLocaleString();
     pinItem.appendChild(pinTimestamp);
 
-    list.appendChild(pinItem);
+    // Add to fragment instead of directly to DOM
+    fragment.appendChild(pinItem);
   });
+
+  // Single DOM append - much better performance!
+  list.appendChild(fragment);
 
   // Add drag and drop functionality
   list.querySelectorAll('.pin-item').forEach(item => {
