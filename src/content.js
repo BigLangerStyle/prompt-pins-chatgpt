@@ -585,30 +585,53 @@ function createHelpButton() {
   const helpBtn = document.createElement('button');
   helpBtn.id = 'keyboard-shortcuts-help';
   helpBtn.className = 'keyboard-shortcuts-help-btn';
-  helpBtn.innerHTML = '?';
+  helpBtn.textContent = '?';
   helpBtn.setAttribute('aria-label', 'View keyboard shortcuts');
   
   // Create tooltip element
   const tooltip = document.createElement('div');
   tooltip.className = 'keyboard-shortcuts-tooltip';
-  tooltip.innerHTML = `
-    <div class="tooltip-title">Keyboard Shortcuts</div>
-    <div class="tooltip-shortcuts">
-      <div class="tooltip-shortcut">
-        <span class="shortcut-key">${SHORTCUTS.createPin}</span>
-        <span class="shortcut-desc">Create pin / Manual creation</span>
-      </div>
-      <div class="tooltip-shortcut">
-        <span class="shortcut-key">${SHORTCUTS.sendImmediately}</span>
-        <span class="shortcut-desc">Send text immediately</span>
-      </div>
-      <div class="tooltip-shortcut">
-        <span class="shortcut-key">${SHORTCUTS.useNextPin}</span>
-        <span class="shortcut-desc">Use next pin in queue</span>
-      </div>
-    </div>
-    <div class="tooltip-footer">Customize in browser settings</div>
-  `;
+  
+  // Create title
+  const title = document.createElement('div');
+  title.className = 'tooltip-title';
+  title.textContent = 'Keyboard Shortcuts';
+  tooltip.appendChild(title);
+  
+  // Create shortcuts container
+  const shortcutsContainer = document.createElement('div');
+  shortcutsContainer.className = 'tooltip-shortcuts';
+  
+  // Create shortcut row helper function
+  const createShortcutRow = (keyCombo, description) => {
+    const row = document.createElement('div');
+    row.className = 'tooltip-shortcut';
+    
+    const keySpan = document.createElement('span');
+    keySpan.className = 'shortcut-key';
+    keySpan.textContent = keyCombo;
+    
+    const descSpan = document.createElement('span');
+    descSpan.className = 'shortcut-desc';
+    descSpan.textContent = description;
+    
+    row.appendChild(keySpan);
+    row.appendChild(descSpan);
+    return row;
+  };
+  
+  // Add each shortcut row
+  shortcutsContainer.appendChild(createShortcutRow(SHORTCUTS.createPin, 'Create pin / Manual creation'));
+  shortcutsContainer.appendChild(createShortcutRow(SHORTCUTS.sendImmediately, 'Send text immediately'));
+  shortcutsContainer.appendChild(createShortcutRow(SHORTCUTS.useNextPin, 'Use next pin in queue'));
+  
+  tooltip.appendChild(shortcutsContainer);
+  
+  // Create footer
+  const footer = document.createElement('div');
+  footer.className = 'tooltip-footer';
+  footer.textContent = 'Customize in browser settings';
+  tooltip.appendChild(footer);
   
   helpBtn.appendChild(tooltip);
   

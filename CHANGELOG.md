@@ -173,6 +173,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Sidebar now properly reconnects when content script is re-injected (page navigation, refresh, service worker restart)
   - Event listeners are reattached automatically when reconnecting to existing sidebar
   - Added console logging for debugging sidebar lifecycle
+- **Mozilla validation warning** - Resolved "Unsafe assignment to innerHTML" warning
+  - Refactored keyboard shortcuts tooltip to use safe DOM manipulation methods
+  - Replaced `innerHTML` with `createElement()`, `textContent`, and `appendChild()`
+  - Maintains identical functionality and visual appearance
+  - Ensures compliance with Mozilla Add-ons security requirements
 
 ### Technical
 - Added `isLoginPage()` function with multiple detection methods:

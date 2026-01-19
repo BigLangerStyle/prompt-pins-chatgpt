@@ -195,6 +195,7 @@ Copyright (c) 2025 Prompt Pins Contributors
 - Header now properly aligns with ChatGPT's header
 - Chrome keyboard shortcuts working (changed to K/L/U from P/S/N)
 - Mac keyboard shortcuts added for both browsers
+- Mozilla validation warning resolved (innerHTML security)
 
 ### Version 1.1.1 (January 11, 2025)
 
