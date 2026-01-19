@@ -390,23 +390,31 @@ function handleLoginStateChange() {
       wasOnLoginPage = true;
     }
   } else {
-    // Logged in - restore saved sidebar state only if we previously collapsed it for login
-    if (wasOnLoginPage && savedPreferenceBeforeLogin !== null) {
-      debugLog('Prompt Pins: User logged in, restoring sidebar to saved preference:', savedPreferenceBeforeLogin);
+    // Logged in - restore saved sidebar state or default to expanded for new users
+    if (wasOnLoginPage) {
+      if (savedPreferenceBeforeLogin !== null) {
+        debugLog('Prompt Pins: User logged in, restoring sidebar to saved preference:', savedPreferenceBeforeLogin);
 
-      // Restore user's original preference
-      if (savedPreferenceBeforeLogin) {
+        // Restore user's original preference
+        if (savedPreferenceBeforeLogin) {
+          sidebar.classList.remove('collapsed');
+          updateToggleButton(toggle, true);
+          sidebarOpen = true;
+        } else {
+          // User's preference was collapsed, keep it that way
+          sidebar.classList.add('collapsed');
+          updateToggleButton(toggle, false);
+          sidebarOpen = false;
+        }
+      } else {
+        // New user - default to expanded to show features
+        debugLog('Prompt Pins: New user logged in, defaulting to expanded sidebar');
         sidebar.classList.remove('collapsed');
         updateToggleButton(toggle, true);
         sidebarOpen = true;
-      } else {
-        // User's preference was collapsed, keep it that way
-        sidebar.classList.add('collapsed');
-        updateToggleButton(toggle, false);
-        sidebarOpen = false;
       }
 
-      // Save the restored preference
+      // Save the restored or default preference
       saveSidebarState();
 
       // Reset flags
