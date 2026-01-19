@@ -93,13 +93,23 @@ const cachedElements = {
 // HELPER FUNCTIONS - DOM
 // ============================================================================
 
-// Get ChatGPT input element
+/**
+ * Gets the ChatGPT input textarea element
+ * Tries multiple selectors for reliability
+ * 
+ * @returns {HTMLElement|null} Input element or null if not found
+ */
 function getChatGPTInput() {
   return document.querySelector(SELECTORS.INPUT)
     || document.querySelector(SELECTORS.INPUT_FALLBACK);
 }
 
-// Get ChatGPT send button
+/**
+ * Gets the ChatGPT send button element
+ * Tries multiple selectors for reliability
+ * 
+ * @returns {HTMLElement|null} Send button or null if not found
+ */
 function getSendButton() {
   return document.querySelector(SELECTORS.SEND_BUTTON)
     || document.querySelector(SELECTORS.SEND_BUTTON_ALT)
@@ -127,13 +137,26 @@ function triggerInputEvents(element) {
 // HELPER FUNCTIONS - CHAT
 // ============================================================================
 
-// Get current chat ID from URL
+/**
+ * Retrieves the current chat ID from the URL
+ * Extracts the ID from ChatGPT's URL pattern: /c/{chat_id}
+ * 
+ * @returns {string|null} Chat ID or null if not in a chat
+ */
 function getCurrentChatId() {
   const match = window.location.pathname.match(/\/c\/([^\/]+)/);
   return match ? match[1] : null;
 }
 
-// Get current chat title from the page
+/**
+ * Retrieves the current chat title from the page
+ * Tries multiple methods to find the title:
+ * 1. Active/selected chat in sidebar
+ * 2. Sidebar link matching current chat ID
+ * 3. Document title (fallback)
+ * 
+ * @returns {string|null} Chat title or null if not found
+ */
 function getCurrentChatTitle() {
   const currentChatId = getCurrentChatId();
   if (!currentChatId) return null;
@@ -170,7 +193,15 @@ function getCurrentChatTitle() {
   return null;
 }
 
-// Check if ChatGPT is currently generating a response
+/**
+ * Checks if ChatGPT is currently generating a response
+ * Uses multiple detection methods:
+ * 1. Presence of "Stop generating" button
+ * 2. Disabled state of send button
+ * 3. Streaming indicator elements
+ * 
+ * @returns {boolean} True if ChatGPT is generating, false otherwise
+ */
 function isChatGPTGenerating() {
   // Method 1: Look for "Stop generating" button
   const stopButton = document.querySelector(SELECTORS.STOP_BUTTON)
@@ -198,7 +229,17 @@ function isChatGPTGenerating() {
 // HELPER FUNCTIONS - LOGIN STATE DETECTION
 // ============================================================================
 
-// Check if user is on the login page
+/**
+ * Detects if the user is currently on the ChatGPT login page
+ * Uses multiple detection methods for reliability:
+ * 1. URL check for chat ID (if present, user is logged in)
+ * 2. Presence of chat input element
+ * 3. Visible "Log in" button detection
+ * 4. Navigation sidebar (only present when logged in)
+ * 5. User menu/avatar elements
+ * 
+ * @returns {boolean} True if on login page, false if logged in
+ */
 function isLoginPage() {
   // Method 1: Check URL - if we have a chat ID, definitely logged in
   const hasChatId = getCurrentChatId() !== null;
@@ -247,7 +288,16 @@ function isLoginPage() {
 // WELCOME ANIMATION FOR FIRST-TIME LOGGED-OUT USERS
 // ============================================================================
 
-// Trigger welcome animation for first-time logged-out users
+/**
+ * Triggers the welcome animation for first-time users on login page
+ * Animation sequence:
+ * 1. Expand sidebar
+ * 2. Wait 2.5 seconds (let user see it)
+ * 3. Collapse sidebar
+ * 4. Add pulse animation to toggle button (2 seconds)
+ * 
+ * @returns {Promise<void>}
+ */
 async function triggerWelcomeAnimation() {
   try {
     const sidebar = cachedElements.sidebar;
@@ -290,7 +340,17 @@ async function triggerWelcomeAnimation() {
 }
 
 
-// Auto-collapse sidebar when on login page, restore state when logged in
+/**
+ * Manages automatic sidebar collapse/expand for login page
+ * Behavior:
+ * - Collapses sidebar when on login page for clean UX
+ * - Restores user's preference when logged in
+ * - Respects manual user overrides
+ * - Triggers welcome animation for first-time logged-out users
+ * - Avoids collapsing during pin creation
+ * 
+ * @returns {void}
+ */
 function handleLoginStateChange() {
   const isOnLoginPage = isLoginPage();
   const sidebar = cachedElements.sidebar;
@@ -795,7 +855,19 @@ function renderEmptyState() {
   list.appendChild(emptyDiv);
 }
 
-// Helper: Create a single pin item element
+/**
+ * Creates a single pin item element with all its content and styling
+ * Handles two pin types:
+ * 1. Text-based pins (from highlights) - shows quoted text + optional comment
+ * 2. Manual pins - shows editable plain text
+ * 
+ * Also adds: cross-chat badges, queued badges, action buttons, timestamp
+ * 
+ * @param {Object} pin - The pin object from pins array
+ * @param {number} index - Index of pin in pins array
+ * @param {string|null} currentChatId - Current chat ID for cross-chat detection
+ * @returns {HTMLElement} The constructed pin item element
+ */
 function createPinItem(pin, index, currentChatId) {
   const pinItem = document.createElement('div');
   pinItem.className = 'pin-item';
@@ -976,7 +1048,18 @@ function attachEditingHandlers() {
   });
 }
 
-// Render the pins list
+/**
+ * Renders the pins list in the sidebar
+ * Main rendering function that:
+ * - Clears pending animations
+ * - Updates button states
+ * - Handles empty state display
+ * - Creates all pin items efficiently (using DocumentFragment)
+ * - Attaches drag/drop and editing handlers
+ * - Adds inline creation UI
+ * 
+ * @returns {void}
+ */
 function renderPins() {
   // Clear any pending animations
   clearPendingAnimations();
@@ -1447,7 +1530,15 @@ function handleDragEnd(e) {
 // PIN CREATION
 // ============================================================================
 
-// Create a new pin
+/**
+ * Creates a new pin from selected text or manual input
+ * If text is empty, opens the manual creation form
+ * If text is provided, shows the comment input dialog
+ * Handles auto-expand/collapse of sidebar for better UX
+ * 
+ * @param {string} text - Selected text to create pin from, or empty for manual creation
+ * @returns {void}
+ */
 function createPin(text) {
   const isManualCreation = !text || text.trim() === '';
 
@@ -1693,7 +1784,15 @@ function showCommentInput(selectedText, wasSidebarCollapsed = false) {
 // PIN OPERATIONS
 // ============================================================================
 
-// Use a pin (fill the ChatGPT input)
+/**
+ * Uses a pin by filling ChatGPT input and submitting
+ * If ChatGPT is currently generating, queues the pin instead
+ * Optionally deletes the pin after use
+ * 
+ * @param {number} index - Index of pin in pins array
+ * @param {boolean} [shouldDelete=false] - Whether to delete pin after use
+ * @returns {void}
+ */
 function usePin(index, shouldDelete = false) {
   if (index < 0 || index >= pins.length) {
     console.error('Invalid pin index:', index);
@@ -1758,7 +1857,13 @@ function cancelQueue() {
   renderPins();
 }
 
-// Watch for ChatGPT to finish processing so we can submit the queued pin
+/**
+ * Watches for ChatGPT to finish generating so queued pin can be submitted
+ * Polls every 500ms until ChatGPT is ready or queue is cancelled
+ * Automatically submits the queued pin when ChatGPT becomes available
+ * 
+ * @returns {void}
+ */
 function watchForChatGPTReady() {
   if (isWatchingForSubmit) return; // Already watching
 
