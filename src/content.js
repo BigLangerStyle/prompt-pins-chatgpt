@@ -2,16 +2,6 @@
 // CONSTANTS
 // ============================================================================
 
-// Debug mode - set to true for development debugging
-const DEBUG = false;
-
-// Debug logging helper - only logs when DEBUG is true
-function debugLog(...args) {
-  if (DEBUG) {
-    console.log(...args);
-  }
-}
-
 // Browser and platform detection
 const IS_CHROME = typeof chrome !== 'undefined' && typeof chrome.runtime !== 'undefined' && !navigator.userAgent.includes('Firefox');
 const IS_MAC = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
@@ -48,14 +38,9 @@ const SELECTORS = {
 };
 
 const TIMINGS = {
-  AUTO_SUBMIT_DELAY: 100,              // Delay before auto-submitting input (ms)
-  QUEUE_CHECK_INTERVAL: 500,           // How often to check if ChatGPT finished generating (ms)
-  CHAT_CHANGE_CHECK: 500,              // How often to check for chat navigation (ms)
-  WELCOME_ANIMATION_DELAY: 2500,       // How long to show expanded sidebar in welcome animation (ms)
-  PULSE_ANIMATION_DURATION: 2000,      // Duration of toggle button pulse animation (ms)
-  LOGIN_CHECK_INTERVAL: 1000,          // How often to check login state (ms)
-  HIGHLIGHT_ANIMATION_DURATION: 1500,  // Duration of new pin highlight animation (ms)
-  AUTO_COLLAPSE_DELAY: 2000            // Delay before auto-collapsing sidebar after pin creation (ms)
+  AUTO_SUBMIT_DELAY: 100,
+  QUEUE_CHECK_INTERVAL: 500,
+  CHAT_CHANGE_CHECK: 500
 };
 
 const UI_TEXT = {
@@ -93,23 +78,13 @@ const cachedElements = {
 // HELPER FUNCTIONS - DOM
 // ============================================================================
 
-/**
- * Gets the ChatGPT input textarea element
- * Tries multiple selectors for reliability
- * 
- * @returns {HTMLElement|null} Input element or null if not found
- */
+// Get ChatGPT input element
 function getChatGPTInput() {
   return document.querySelector(SELECTORS.INPUT)
     || document.querySelector(SELECTORS.INPUT_FALLBACK);
 }
 
-/**
- * Gets the ChatGPT send button element
- * Tries multiple selectors for reliability
- * 
- * @returns {HTMLElement|null} Send button or null if not found
- */
+// Get ChatGPT send button
 function getSendButton() {
   return document.querySelector(SELECTORS.SEND_BUTTON)
     || document.querySelector(SELECTORS.SEND_BUTTON_ALT)
@@ -137,26 +112,13 @@ function triggerInputEvents(element) {
 // HELPER FUNCTIONS - CHAT
 // ============================================================================
 
-/**
- * Retrieves the current chat ID from the URL
- * Extracts the ID from ChatGPT's URL pattern: /c/{chat_id}
- * 
- * @returns {string|null} Chat ID or null if not in a chat
- */
+// Get current chat ID from URL
 function getCurrentChatId() {
   const match = window.location.pathname.match(/\/c\/([^\/]+)/);
   return match ? match[1] : null;
 }
 
-/**
- * Retrieves the current chat title from the page
- * Tries multiple methods to find the title:
- * 1. Active/selected chat in sidebar
- * 2. Sidebar link matching current chat ID
- * 3. Document title (fallback)
- * 
- * @returns {string|null} Chat title or null if not found
- */
+// Get current chat title from the page
 function getCurrentChatTitle() {
   const currentChatId = getCurrentChatId();
   if (!currentChatId) return null;
@@ -193,15 +155,7 @@ function getCurrentChatTitle() {
   return null;
 }
 
-/**
- * Checks if ChatGPT is currently generating a response
- * Uses multiple detection methods:
- * 1. Presence of "Stop generating" button
- * 2. Disabled state of send button
- * 3. Streaming indicator elements
- * 
- * @returns {boolean} True if ChatGPT is generating, false otherwise
- */
+// Check if ChatGPT is currently generating a response
 function isChatGPTGenerating() {
   // Method 1: Look for "Stop generating" button
   const stopButton = document.querySelector(SELECTORS.STOP_BUTTON)
@@ -229,22 +183,12 @@ function isChatGPTGenerating() {
 // HELPER FUNCTIONS - LOGIN STATE DETECTION
 // ============================================================================
 
-/**
- * Detects if the user is currently on the ChatGPT login page
- * Uses multiple detection methods for reliability:
- * 1. URL check for chat ID (if present, user is logged in)
- * 2. Presence of chat input element
- * 3. Visible "Log in" button detection
- * 4. Navigation sidebar (only present when logged in)
- * 5. User menu/avatar elements
- * 
- * @returns {boolean} True if on login page, false if logged in
- */
+// Check if user is on the login page
 function isLoginPage() {
   // Method 1: Check URL - if we have a chat ID, definitely logged in
   const hasChatId = getCurrentChatId() !== null;
   if (hasChatId) {
-    debugLog('Prompt Pins: Has chat ID - user is logged in');
+    console.log('Prompt Pins: Has chat ID - user is logged in');
     return false; // Definitely logged in
   }
 
@@ -272,7 +216,7 @@ function isLoginPage() {
   // - OR: No navigation sidebar AND no chat ID AND has input (the pre-login homepage)
   const isOnLoginPage = (hasLoginButton && !hasChatId) || (!hasNavSidebar && !hasChatId && hasInput);
 
-  debugLog('Prompt Pins: Login detection -', {
+  console.log('Prompt Pins: Login detection -', {
     hasChatId,
     hasInput,
     hasLoginButton,
@@ -288,69 +232,45 @@ function isLoginPage() {
 // WELCOME ANIMATION FOR FIRST-TIME LOGGED-OUT USERS
 // ============================================================================
 
-/**
- * Triggers the welcome animation for first-time users on login page
- * Animation sequence:
- * 1. Expand sidebar
- * 2. Wait 2.5 seconds (let user see it)
- * 3. Collapse sidebar
- * 4. Add pulse animation to toggle button (2 seconds)
- * 
- * @returns {Promise<void>}
- */
+// Trigger welcome animation for first-time logged-out users
 async function triggerWelcomeAnimation() {
-  try {
-    const sidebar = cachedElements.sidebar;
-    const toggle = cachedElements.toggleBtn;
+  const sidebar = cachedElements.sidebar;
+  const toggle = cachedElements.toggleBtn;
 
-    if (!sidebar || !toggle) return;
+  if (!sidebar || !toggle) return;
 
-    debugLog('Prompt Pins: Triggering welcome animation');
+  console.log('Prompt Pins: Triggering welcome animation');
 
-    // Mark welcome as seen IMMEDIATELY to prevent double-triggering from interval
-    hasSeenWelcome = true;
-    await saveWelcomeState();
+  // Mark welcome as seen IMMEDIATELY to prevent double-triggering from interval
+  hasSeenWelcome = true;
+  await saveWelcomeState();
 
-    // 1. Ensure sidebar is expanded
-    sidebar.classList.remove('collapsed');
-    updateToggleButton(toggle, true);
-    sidebarOpen = true;
+  // 1. Ensure sidebar is expanded
+  sidebar.classList.remove('collapsed');
+  updateToggleButton(toggle, true);
+  sidebarOpen = true;
 
-    // 2. Wait 2.5 seconds
-    await new Promise(resolve => setTimeout(resolve, TIMINGS.WELCOME_ANIMATION_DELAY));
+  // 2. Wait 2.5 seconds
+  await new Promise(resolve => setTimeout(resolve, 2500));
 
-    // 3. Collapse the sidebar
-    sidebar.classList.add('collapsed');
-    updateToggleButton(toggle, false);
-    sidebarOpen = false;
+  // 3. Collapse the sidebar
+  sidebar.classList.add('collapsed');
+  updateToggleButton(toggle, false);
+  sidebarOpen = false;
 
-    // 4. Add pulse animation to toggle button
-    toggle.classList.add('toggle-pulse');
+  // 4. Add pulse animation to toggle button
+  toggle.classList.add('toggle-pulse');
 
-    // 5. Remove pulse animation after it completes (2s for both pulses)
-    setTimeout(() => {
-      toggle.classList.remove('toggle-pulse');
-    }, TIMINGS.PULSE_ANIMATION_DURATION);
+  // 5. Remove pulse animation after it completes (2s for both pulses)
+  setTimeout(() => {
+    toggle.classList.remove('toggle-pulse');
+  }, 2000);
 
-    debugLog('Prompt Pins: Welcome animation complete');
-  } catch (error) {
-    console.error('Prompt Pins: Welcome animation failed:', error);
-    // Animation failure is non-critical, continue normally
-  }
+  console.log('Prompt Pins: Welcome animation complete');
 }
 
 
-/**
- * Manages automatic sidebar collapse/expand for login page
- * Behavior:
- * - Collapses sidebar when on login page for clean UX
- * - Restores user's preference when logged in
- * - Respects manual user overrides
- * - Triggers welcome animation for first-time logged-out users
- * - Avoids collapsing during pin creation
- * 
- * @returns {void}
- */
+// Auto-collapse sidebar when on login page, restore state when logged in
 function handleLoginStateChange() {
   const isOnLoginPage = isLoginPage();
   const sidebar = cachedElements.sidebar;
@@ -361,7 +281,7 @@ function handleLoginStateChange() {
   if (isOnLoginPage) {
     // Check if this is a first-time logged-out user who hasn't seen the welcome animation
     if (!hasSeenWelcome) {
-      debugLog('Prompt Pins: First-time logged-out user detected, triggering welcome animation');
+      console.log('Prompt Pins: First-time logged-out user detected, triggering welcome animation');
       triggerWelcomeAnimation();
       return; // Welcome animation will handle the collapse
     }
@@ -371,14 +291,14 @@ function handleLoginStateChange() {
     const hasInlineFormOpen = document.getElementById('inline-pin-form')?.style.display === 'block';
 
     if (hasActiveDialog || hasInlineFormOpen) {
-      debugLog('Prompt Pins: Pin creation in progress, deferring auto-collapse');
+      console.log('Prompt Pins: Pin creation in progress, deferring auto-collapse');
       return; // Don't auto-collapse while user is creating a pin
     }
 
     // On login page - collapse sidebar if not already collapsed
     // BUT respect if user manually expanded it (manual override)
     if (!sidebar.classList.contains('collapsed') && !manualOverrideOnLogin) {
-      debugLog('Prompt Pins: Login page detected, auto-collapsing sidebar');
+      console.log('Prompt Pins: Login page detected, auto-collapsing sidebar');
 
       // Save user's preference before we change it
       savedPreferenceBeforeLogin = sidebarOpen;
@@ -392,7 +312,7 @@ function handleLoginStateChange() {
   } else {
     // Logged in - restore saved sidebar state only if we previously collapsed it for login
     if (wasOnLoginPage && savedPreferenceBeforeLogin !== null) {
-      debugLog('Prompt Pins: User logged in, restoring sidebar to saved preference:', savedPreferenceBeforeLogin);
+      console.log('Prompt Pins: User logged in, restoring sidebar to saved preference:', savedPreferenceBeforeLogin);
 
       // Restore user's original preference
       if (savedPreferenceBeforeLogin) {
@@ -435,7 +355,7 @@ function startLoginStateWatcher() {
 
   loginStateCheckInterval = setInterval(() => {
     handleLoginStateChange();
-  }, TIMINGS.LOGIN_CHECK_INTERVAL); // Check every second
+  }, 1000); // Check every second
 }
 
 function stopLoginStateWatcher() {
@@ -600,7 +520,7 @@ function createHelpButton() {
 function createSidebar() {
   // Check if sidebar already exists (prevent duplicate creation)
   if (document.getElementById('prompt-pins-sidebar')) {
-    debugLog('Prompt Pins: Sidebar already exists, skipping creation');
+    console.log('Prompt Pins: Sidebar already exists, skipping creation');
     return;
   }
 
@@ -690,7 +610,7 @@ function toggleSidebar() {
     clearTimeout(autoCollapseTimeout);
     autoCollapseTimeout = null;
     isAutoExpanded = false;
-    debugLog('Prompt Pins: User manually toggled, canceling auto-collapse');
+    console.log('Prompt Pins: User manually toggled, canceling auto-collapse');
   }
 
   sidebarOpen = !sidebarOpen;
@@ -704,7 +624,7 @@ function toggleSidebar() {
     // If user manually expands on login page, set override flag
     if (isLoginPage()) {
       manualOverrideOnLogin = true;
-      debugLog('Prompt Pins: User manually expanded sidebar on login page');
+      console.log('Prompt Pins: User manually expanded sidebar on login page');
     }
   } else {
     sidebar.classList.add('collapsed');
@@ -725,7 +645,7 @@ function autoExpandSidebar() {
 
   if (!sidebar || !toggle) return;
 
-  debugLog('Prompt Pins: Auto-expanding sidebar for pin creation');
+  console.log('Prompt Pins: Auto-expanding sidebar for pin creation');
 
   // Visually expand the sidebar (but don't change sidebarOpen state or save)
   sidebar.classList.remove('collapsed');
@@ -740,7 +660,7 @@ function autoCollapseSidebar() {
 
   if (!sidebar || !toggle || !isAutoExpanded) return;
 
-  debugLog('Prompt Pins: Auto-collapsing sidebar back to original state');
+  console.log('Prompt Pins: Auto-collapsing sidebar back to original state');
 
   // Collapse the sidebar back (restore visual state without saving)
   sidebar.classList.add('collapsed');
@@ -756,26 +676,14 @@ function autoCollapseSidebar() {
 
 // Load pins from storage
 async function loadPins() {
-  try {
-    const result = await browser.storage.local.get('pins');
-    pins = result.pins || [];
-    renderPins();
-  } catch (error) {
-    console.error('Prompt Pins: Failed to load pins from storage:', error);
-    // Graceful fallback: start with empty pins array
-    pins = [];
-    renderPins();
-  }
+  const result = await browser.storage.local.get('pins');
+  pins = result.pins || [];
+  renderPins();
 }
 
 // Save pins to storage
 async function savePins() {
-  try {
-    await browser.storage.local.set({ pins });
-  } catch (error) {
-    console.error('Prompt Pins: Failed to save pins to storage:', error);
-    // Note: User's changes are still in memory, just not persisted
-  }
+  await browser.storage.local.set({ pins });
 }
 
 // ============================================================================
@@ -784,36 +692,21 @@ async function savePins() {
 
 // Load sidebar state from storage
 async function loadSidebarState() {
-  try {
-    const result = await browser.storage.local.get(['sidebarOpen', 'hasSeenWelcome']);
-    // If no saved state exists, default to true (open)
-    sidebarOpen = result.sidebarOpen !== undefined ? result.sidebarOpen : true;
-    // Check if user has seen the welcome animation
-    hasSeenWelcome = result.hasSeenWelcome !== undefined ? result.hasSeenWelcome : false;
-  } catch (error) {
-    console.error('Prompt Pins: Failed to load sidebar state from storage:', error);
-    // Use defaults
-    sidebarOpen = true;
-    hasSeenWelcome = false;
-  }
+  const result = await browser.storage.local.get(['sidebarOpen', 'hasSeenWelcome']);
+  // If no saved state exists, default to true (open)
+  sidebarOpen = result.sidebarOpen !== undefined ? result.sidebarOpen : true;
+  // Check if user has seen the welcome animation
+  hasSeenWelcome = result.hasSeenWelcome !== undefined ? result.hasSeenWelcome : false;
 }
 
 // Save sidebar state to storage
 async function saveSidebarState() {
-  try {
-    await browser.storage.local.set({ sidebarOpen });
-  } catch (error) {
-    console.error('Prompt Pins: Failed to save sidebar state to storage:', error);
-  }
+  await browser.storage.local.set({ sidebarOpen });
 }
 
 // Save welcome animation state to storage
 async function saveWelcomeState() {
-  try {
-    await browser.storage.local.set({ hasSeenWelcome });
-  } catch (error) {
-    console.error('Prompt Pins: Failed to save welcome state to storage:', error);
-  }
+  await browser.storage.local.set({ hasSeenWelcome });
 }
 
 
@@ -821,19 +714,21 @@ async function saveWelcomeState() {
 // PIN RENDERING
 // ============================================================================
 
-// Helper: Clear any pending animation timeouts
-function clearPendingAnimations() {
+// Render the pins list
+function renderPins() {
+  // Clear any pending highlight animation timeout to prevent errors
   if (currentHighlightTimeout !== null) {
     clearTimeout(currentHighlightTimeout);
     currentHighlightTimeout = null;
   }
-}
 
-// Helper: Update button states based on pins length and queue status
-function updateButtonStates() {
+  const list = cachedElements.pinsList;
   const nextBtn = cachedElements.nextBtn;
   const clearAllBtn = cachedElements.clearBtn;
 
+  if (!list) return;
+
+  // Enable/disable next button and clear all button
   if (nextBtn) {
     nextBtn.disabled = pins.length === 0 || queuedPinIndex !== null;
   }
@@ -841,185 +736,174 @@ function updateButtonStates() {
   if (clearAllBtn) {
     clearAllBtn.disabled = pins.length === 0;
   }
-}
 
-// Helper: Render empty state message
-function renderEmptyState() {
-  const list = cachedElements.pinsList;
-  if (!list) return;
+  if (pins.length === 0) {
+    list.innerHTML = '';
+    const emptyDiv = document.createElement('div');
+    emptyDiv.className = 'empty-state';
+    emptyDiv.textContent = UI_TEXT.EMPTY_STATE;
+    list.appendChild(emptyDiv);
 
+    // Add inline creation UI even when empty
+    addInlineCreationUI();
+    return;
+  }
+
+  // Clear list
   list.innerHTML = '';
-  const emptyDiv = document.createElement('div');
-  emptyDiv.className = 'empty-state';
-  emptyDiv.textContent = UI_TEXT.EMPTY_STATE;
-  list.appendChild(emptyDiv);
-}
 
-/**
- * Creates a single pin item element with all its content and styling
- * Handles two pin types:
- * 1. Text-based pins (from highlights) - shows quoted text + optional comment
- * 2. Manual pins - shows editable plain text
- * 
- * Also adds: cross-chat badges, queued badges, action buttons, timestamp
- * 
- * @param {Object} pin - The pin object from pins array
- * @param {number} index - Index of pin in pins array
- * @param {string|null} currentChatId - Current chat ID for cross-chat detection
- * @returns {HTMLElement} The constructed pin item element
- */
-function createPinItem(pin, index, currentChatId) {
-  const pinItem = document.createElement('div');
-  pinItem.className = 'pin-item';
-  pinItem.setAttribute('data-index', index);
-  pinItem.setAttribute('draggable', 'true');
+  // Get current chat ID for comparison
+  const currentChatId = getCurrentChatId();
 
-  // Add queued class if this pin is queued
-  const isQueued = queuedPinIndex === index;
-  if (isQueued) {
-    pinItem.classList.add('queued');
-  }
+  // Create pin items
+  pins.forEach((pin, index) => {
+    const pinItem = document.createElement('div');
+    pinItem.className = 'pin-item';
+    pinItem.setAttribute('data-index', index);
+    pinItem.setAttribute('draggable', 'true');
 
-  // Check if pin is from a different chat
-  const isFromDifferentChat = pin.chatId && currentChatId && pin.chatId !== currentChatId;
-  if (isFromDifferentChat) {
-    pinItem.classList.add('cross-chat');
-  }
+    // Add queued class if this pin is queued
+    const isQueued = queuedPinIndex === index;
+    if (isQueued) {
+      pinItem.classList.add('queued');
+    }
 
-  // Determine if this pin has a selectedText (quoted text from highlight)
-  // vs. manually created plain text
-  const hasSelectedText = pin.selectedText && pin.selectedText.trim().length > 0;
-  
-  if (hasSelectedText) {
-    // Pin Type 1: From highlighted text - show quoted text (NOT editable)
-    const pinText = document.createElement('div');
-    pinText.className = 'pin-text';
-    pinText.textContent = `"${pin.text}"`;
-    pinItem.appendChild(pinText);
+    // Check if pin is from a different chat
+    const isFromDifferentChat = pin.chatId && currentChatId && pin.chatId !== currentChatId;
+    if (isFromDifferentChat) {
+      pinItem.classList.add('cross-chat');
+    }
 
-    // Show comment field (EDITABLE)
-    if (pin.comment) {
-      const pinCommentWrapper = document.createElement('div');
-      pinCommentWrapper.className = 'pin-comment-wrapper';
-      pinCommentWrapper.setAttribute('data-index', index);
-      pinCommentWrapper.setAttribute('data-field', 'comment');
+    // Determine if this pin has a selectedText (quoted text from highlight)
+    // vs. manually created plain text
+    const hasSelectedText = pin.selectedText && pin.selectedText.trim().length > 0;
+    
+    if (hasSelectedText) {
+      // Pin Type 1: From highlighted text - show quoted text (NOT editable)
+      const pinText = document.createElement('div');
+      pinText.className = 'pin-text';
+      pinText.textContent = `"${pin.text}"`;
+      pinItem.appendChild(pinText);
+
+      // Show comment field (EDITABLE)
+      if (pin.comment) {
+        const pinCommentWrapper = document.createElement('div');
+        pinCommentWrapper.className = 'pin-comment-wrapper';
+        pinCommentWrapper.setAttribute('data-index', index);
+        pinCommentWrapper.setAttribute('data-field', 'comment');
+        
+        const pinComment = document.createElement('div');
+        pinComment.className = 'pin-comment pin-editable-field';
+        pinComment.textContent = pin.comment;
+        
+        const editIcon = document.createElement('span');
+        editIcon.className = 'edit-icon';
+        editIcon.textContent = '✏️';
+        editIcon.title = 'Click to edit';
+        
+        pinCommentWrapper.appendChild(pinComment);
+        pinCommentWrapper.appendChild(editIcon);
+        pinItem.appendChild(pinCommentWrapper);
+      }
+    } else {
+      // Pin Type 2: From manual creation - show plain text (EDITABLE, no quotes)
+      const pinTextWrapper = document.createElement('div');
+      pinTextWrapper.className = 'pin-text-wrapper';
+      pinTextWrapper.setAttribute('data-index', index);
+      pinTextWrapper.setAttribute('data-field', 'text');
       
-      const pinComment = document.createElement('div');
-      pinComment.className = 'pin-comment pin-editable-field';
-      pinComment.textContent = pin.comment;
+      const pinText = document.createElement('div');
+      pinText.className = 'pin-text pin-editable-field';
+      pinText.textContent = pin.text;
+      pinText.style.fontStyle = 'normal'; // Override italic style for manual pins
+      pinText.style.borderLeft = 'none'; // Remove quote border
       
       const editIcon = document.createElement('span');
       editIcon.className = 'edit-icon';
       editIcon.textContent = '✏️';
       editIcon.title = 'Click to edit';
       
-      pinCommentWrapper.appendChild(pinComment);
-      pinCommentWrapper.appendChild(editIcon);
-      pinItem.appendChild(pinCommentWrapper);
+      pinTextWrapper.appendChild(pinText);
+      pinTextWrapper.appendChild(editIcon);
+      pinItem.appendChild(pinTextWrapper);
     }
-  } else {
-    // Pin Type 2: From manual creation - show plain text (EDITABLE, no quotes)
-    const pinTextWrapper = document.createElement('div');
-    pinTextWrapper.className = 'pin-text-wrapper';
-    pinTextWrapper.setAttribute('data-index', index);
-    pinTextWrapper.setAttribute('data-field', 'text');
-    
-    const pinText = document.createElement('div');
-    pinText.className = 'pin-text pin-editable-field';
-    pinText.textContent = pin.text;
-    pinText.style.fontStyle = 'normal'; // Override italic style for manual pins
-    pinText.style.borderLeft = 'none'; // Remove quote border
-    
-    const editIcon = document.createElement('span');
-    editIcon.className = 'edit-icon';
-    editIcon.textContent = '✏️';
-    editIcon.title = 'Click to edit';
-    
-    pinTextWrapper.appendChild(pinText);
-    pinTextWrapper.appendChild(editIcon);
-    pinItem.appendChild(pinTextWrapper);
-  }
 
-  // Show cross-chat badge if pin is from another chat
-  if (isFromDifferentChat) {
-    const crossChatBadge = document.createElement('div');
-    crossChatBadge.className = 'cross-chat-badge';
-    if (pin.chatTitle) {
-      crossChatBadge.textContent = `From: ${pin.chatTitle}`;
+    // Show cross-chat badge if pin is from another chat
+    if (isFromDifferentChat) {
+      const crossChatBadge = document.createElement('div');
+      crossChatBadge.className = 'cross-chat-badge';
+      if (pin.chatTitle) {
+        crossChatBadge.textContent = `From: ${pin.chatTitle}`;
+      } else {
+        crossChatBadge.textContent = 'From another chat';
+      }
+      pinItem.appendChild(crossChatBadge);
+    }
+
+    // Show queued badge if this pin is queued
+    if (isQueued) {
+      const queuedBadge = document.createElement('div');
+      queuedBadge.className = 'queued-badge';
+      queuedBadge.textContent = UI_TEXT.QUEUED_BADGE;
+      pinItem.appendChild(queuedBadge);
+    }
+
+    const pinActions = document.createElement('div');
+    pinActions.className = 'pin-actions';
+
+    if (isQueued) {
+      // Show cancel button for queued pin
+      const cancelBtn = document.createElement('button');
+      cancelBtn.className = 'cancel-queue-btn';
+      cancelBtn.textContent = 'Cancel';
+      cancelBtn.addEventListener('click', cancelQueue);
+      pinActions.appendChild(cancelBtn);
     } else {
-      crossChatBadge.textContent = 'From another chat';
-    }
-    pinItem.appendChild(crossChatBadge);
-  }
+      // Show normal use/delete buttons
+      const useBtn = document.createElement('button');
+      useBtn.className = 'use-pin';
+      useBtn.setAttribute('data-index', index);
+      useBtn.textContent = 'Use';
+      useBtn.title = 'Load and submit this pin';
 
-  // Show queued badge if this pin is queued
-  if (isQueued) {
-    const queuedBadge = document.createElement('div');
-    queuedBadge.className = 'queued-badge';
-    queuedBadge.textContent = UI_TEXT.QUEUED_BADGE;
-    pinItem.appendChild(queuedBadge);
-  }
+      // Disable use button if another pin is queued
+      if (queuedPinIndex !== null) {
+        useBtn.disabled = true;
+        useBtn.style.opacity = '0.5';
+        useBtn.style.cursor = 'not-allowed';
+      }
 
-  const pinActions = document.createElement('div');
-  pinActions.className = 'pin-actions';
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'delete-pin';
+      deleteBtn.setAttribute('data-index', index);
+      deleteBtn.textContent = UI_TEXT.DELETE_SYMBOL;
+      deleteBtn.title = 'Delete this pin';
 
-  if (isQueued) {
-    // Show cancel button for queued pin
-    const cancelBtn = document.createElement('button');
-    cancelBtn.className = 'cancel-queue-btn';
-    cancelBtn.textContent = 'Cancel';
-    cancelBtn.addEventListener('click', cancelQueue);
-    pinActions.appendChild(cancelBtn);
-  } else {
-    // Show normal use/delete buttons
-    const useBtn = document.createElement('button');
-    useBtn.className = 'use-pin';
-    useBtn.setAttribute('data-index', index);
-    useBtn.textContent = 'Use';
-    useBtn.title = 'Load and submit this pin';
+      useBtn.addEventListener('click', (e) => {
+        const idx = parseInt(e.target.dataset.index);
+        usePin(idx, true);
+      });
 
-    // Disable use button if another pin is queued
-    if (queuedPinIndex !== null) {
-      useBtn.disabled = true;
-      useBtn.style.opacity = '0.5';
-      useBtn.style.cursor = 'not-allowed';
+      deleteBtn.addEventListener('click', (e) => {
+        const idx = parseInt(e.target.dataset.index);
+        deletePin(idx);
+      });
+
+      pinActions.appendChild(useBtn);
+      pinActions.appendChild(deleteBtn);
     }
 
-    const deleteBtn = document.createElement('button');
-    deleteBtn.className = 'delete-pin';
-    deleteBtn.setAttribute('data-index', index);
-    deleteBtn.textContent = UI_TEXT.DELETE_SYMBOL;
-    deleteBtn.title = 'Delete this pin';
+    pinItem.appendChild(pinActions);
 
-    useBtn.addEventListener('click', (e) => {
-      const idx = parseInt(e.target.dataset.index);
-      usePin(idx, true);
-    });
+    const pinTimestamp = document.createElement('div');
+    pinTimestamp.className = 'pin-timestamp';
+    pinTimestamp.textContent = new Date(pin.timestamp).toLocaleString();
+    pinItem.appendChild(pinTimestamp);
 
-    deleteBtn.addEventListener('click', (e) => {
-      const idx = parseInt(e.target.dataset.index);
-      deletePin(idx);
-    });
+    list.appendChild(pinItem);
+  });
 
-    pinActions.appendChild(useBtn);
-    pinActions.appendChild(deleteBtn);
-  }
-
-  pinItem.appendChild(pinActions);
-
-  const pinTimestamp = document.createElement('div');
-  pinTimestamp.className = 'pin-timestamp';
-  pinTimestamp.textContent = new Date(pin.timestamp).toLocaleString();
-  pinItem.appendChild(pinTimestamp);
-
-  return pinItem;
-}
-
-// Helper: Attach drag and drop event handlers to all pin items
-function attachDragAndDropHandlers() {
-  const list = cachedElements.pinsList;
-  if (!list) return;
-
+  // Add drag and drop functionality
   list.querySelectorAll('.pin-item').forEach(item => {
     item.addEventListener('dragstart', handleDragStart);
     item.addEventListener('dragenter', handleDragEnter);
@@ -1028,13 +912,8 @@ function attachDragAndDropHandlers() {
     item.addEventListener('drop', handleDrop);
     item.addEventListener('dragend', handleDragEnd);
   });
-}
 
-// Helper: Attach inline editing event handlers
-function attachEditingHandlers() {
-  const list = cachedElements.pinsList;
-  if (!list) return;
-
+  // Add inline editing functionality
   list.querySelectorAll('.pin-comment-wrapper, .pin-text-wrapper').forEach(wrapper => {
     const editableField = wrapper.querySelector('.pin-editable-field');
     const editIcon = wrapper.querySelector('.edit-icon');
@@ -1046,71 +925,30 @@ function attachEditingHandlers() {
       editIcon.addEventListener('click', startEdit);
     }
   });
-}
-
-/**
- * Renders the pins list in the sidebar
- * Main rendering function that:
- * - Clears pending animations
- * - Updates button states
- * - Handles empty state display
- * - Creates all pin items efficiently (using DocumentFragment)
- * - Attaches drag/drop and editing handlers
- * - Adds inline creation UI
- * 
- * @returns {void}
- */
-function renderPins() {
-  // Clear any pending animations
-  clearPendingAnimations();
-
-  const list = cachedElements.pinsList;
-  if (!list) return;
-
-  // Update button states
-  updateButtonStates();
-
-  // Handle empty state
-  if (pins.length === 0) {
-    renderEmptyState();
-    addInlineCreationUI();
-    return;
-  }
-
-  // Clear list and prepare for rendering
-  list.innerHTML = '';
-  const currentChatId = getCurrentChatId();
-  const fragment = document.createDocumentFragment();
-
-  // Create all pin items
-  pins.forEach((pin, index) => {
-    const pinItem = createPinItem(pin, index, currentChatId);
-    fragment.appendChild(pinItem);
-  });
-
-  // Single DOM append for performance
-  list.appendChild(fragment);
-
-  // Attach event handlers
-  attachDragAndDropHandlers();
-  attachEditingHandlers();
 
   // Add inline creation UI
   addInlineCreationUI();
 }
 
-// Helper: Create the "+ New" button element
-function createNewPinButton() {
+// Add inline pin creation UI (+ New button and inline form)
+function addInlineCreationUI() {
+  const list = cachedElements.pinsList;
+  if (!list) return;
+
+  // Remove existing inline UI if present
+  const existingBtn = document.getElementById('inline-new-pin-btn');
+  const existingForm = document.getElementById('inline-pin-form');
+  if (existingBtn) existingBtn.remove();
+  if (existingForm) existingForm.remove();
+
+  // Create "+ New" button (fixed to bottom right of sidebar)
   const newBtn = document.createElement('button');
   newBtn.id = 'inline-new-pin-btn';
   newBtn.className = 'inline-new-pin-btn';
   newBtn.textContent = '+ New';
   newBtn.title = `Create a new pin manually (${SHORTCUTS.createPin} without selection)`;
-  return newBtn;
-}
 
-// Helper: Create the inline pin creation form
-function createInlinePinForm() {
+  // Create inline form (hidden initially, appears in pins list)
   const formContainer = document.createElement('div');
   formContainer.id = 'inline-pin-form';
   formContainer.className = 'inline-pin-form';
@@ -1139,82 +977,63 @@ function createInlinePinForm() {
   formContainer.appendChild(textarea);
   formContainer.appendChild(buttons);
 
-  return { formContainer, textarea, cancelBtn, saveBtn };
-}
-
-// Helper: Show the inline form and hide empty state
-function showInlineForm(formContainer, textarea) {
-  const list = cachedElements.pinsList;
-  
-  // Hide empty state message if present
-  const emptyState = list.querySelector('.empty-state');
-  if (emptyState) {
-    emptyState.style.display = 'none';
-  }
-
-  // Show form
-  formContainer.style.display = 'block';
-  textarea.value = '';
-  textarea.focus();
-}
-
-// Helper: Hide the inline form and restore empty state if needed
-function hideInlineForm(formContainer) {
-  const list = cachedElements.pinsList;
-  formContainer.style.display = 'none';
-
-  // Show empty state message if no pins
-  if (pins.length === 0) {
+  // Event handlers
+  newBtn.addEventListener('click', () => {
+    // Hide empty state message if present
     const emptyState = list.querySelector('.empty-state');
     if (emptyState) {
-      emptyState.style.display = 'block';
+      emptyState.style.display = 'none';
     }
-  }
-}
 
-// Helper: Save a new pin from the inline form
-function saveInlinePin(textarea, hideForm) {
-  const text = textarea.value.trim();
-  if (!text) {
-    hideForm();
-    return;
-  }
+    // Show form
+    formContainer.style.display = 'block';
+    textarea.value = '';
+    textarea.focus();
+  });
 
-  const chatId = getCurrentChatId();
-  const chatTitle = getCurrentChatTitle();
+  const hideForm = () => {
+    formContainer.style.display = 'none';
 
-  const newPin = {
-    text: text,
-    comment: null,
-    timestamp: Date.now(),
-    chatId: chatId,
-    chatTitle: chatTitle,
-    isManuallyCreated: true // Flag for manual creation
+    // Show empty state message if no pins
+    if (pins.length === 0) {
+      const emptyState = list.querySelector('.empty-state');
+      if (emptyState) {
+        emptyState.style.display = 'block';
+      }
+    }
   };
 
-  pins.push(newPin);
-  savePins();
-  renderPins();
-
-  // Highlight the newly created pin
-  const newPinIndex = pins.length - 1;
-  highlightNewPin(newPinIndex);
-
-  hideForm();
-}
-
-// Helper: Setup event handlers for inline form
-function setupInlineFormHandlers(newBtn, formContainer, textarea, cancelBtn, saveBtn) {
-  const hideForm = () => hideInlineForm(formContainer);
-
-  // Show form when + New button clicked
-  newBtn.addEventListener('click', () => showInlineForm(formContainer, textarea));
-
-  // Cancel button
   cancelBtn.addEventListener('click', hideForm);
 
-  // Save button
-  saveBtn.addEventListener('click', () => saveInlinePin(textarea, hideForm));
+  saveBtn.addEventListener('click', () => {
+    const text = textarea.value.trim();
+    if (!text) {
+      hideForm();
+      return;
+    }
+
+    const chatId = getCurrentChatId();
+    const chatTitle = getCurrentChatTitle();
+
+    const newPin = {
+      text: text,
+      comment: null,
+      timestamp: Date.now(),
+      chatId: chatId,
+      chatTitle: chatTitle,
+      isManuallyCreated: true // Flag for manual creation
+    };
+
+    pins.push(newPin);
+    savePins();
+    renderPins();
+
+    // Highlight the newly created pin
+    const newPinIndex = pins.length - 1;
+    highlightNewPin(newPinIndex);
+
+    hideForm();
+  });
 
   // Auto-expand textarea as user types
   textarea.addEventListener('input', () => {
@@ -1231,31 +1050,13 @@ function setupInlineFormHandlers(newBtn, formContainer, textarea, cancelBtn, sav
       hideForm();
     }
   });
-}
-
-// Add inline pin creation UI (+ New button and inline form)
-function addInlineCreationUI() {
-  const list = cachedElements.pinsList;
-  if (!list) return;
-
-  // Remove existing inline UI if present
-  const existingBtn = document.getElementById('inline-new-pin-btn');
-  const existingForm = document.getElementById('inline-pin-form');
-  if (existingBtn) existingBtn.remove();
-  if (existingForm) existingForm.remove();
-
-  // Create UI elements
-  const newBtn = createNewPinButton();
-  const { formContainer, textarea, cancelBtn, saveBtn } = createInlinePinForm();
-
-  // Setup event handlers
-  setupInlineFormHandlers(newBtn, formContainer, textarea, cancelBtn, saveBtn);
 
   // Append to DOM
   const sidebar = cachedElements.sidebar;
   if (sidebar) {
     sidebar.appendChild(newBtn);
   }
+
   list.appendChild(formContainer);
 }
 
@@ -1301,7 +1102,7 @@ function highlightNewPin(index) {
         newPinElement.classList.remove('newly-created');
       }
       currentHighlightTimeout = null;
-    }, TIMINGS.HIGHLIGHT_ANIMATION_DURATION);
+    }, 1500);
   }
 }
 
@@ -1530,15 +1331,7 @@ function handleDragEnd(e) {
 // PIN CREATION
 // ============================================================================
 
-/**
- * Creates a new pin from selected text or manual input
- * If text is empty, opens the manual creation form
- * If text is provided, shows the comment input dialog
- * Handles auto-expand/collapse of sidebar for better UX
- * 
- * @param {string} text - Selected text to create pin from, or empty for manual creation
- * @returns {void}
- */
+// Create a new pin
 function createPin(text) {
   const isManualCreation = !text || text.trim() === '';
 
@@ -1747,7 +1540,7 @@ function showCommentInput(selectedText, wasSidebarCollapsed = false) {
       // Wait for highlight animation to complete (1.5s) + small buffer
       autoCollapseTimeout = setTimeout(() => {
         autoCollapseSidebar();
-      }, TIMINGS.AUTO_COLLAPSE_DELAY); // 2 seconds total: 1.5s animation + 0.5s buffer
+      }, 2000); // 2 seconds total: 1.5s animation + 0.5s buffer
     }
 
     cleanup();
@@ -1784,15 +1577,7 @@ function showCommentInput(selectedText, wasSidebarCollapsed = false) {
 // PIN OPERATIONS
 // ============================================================================
 
-/**
- * Uses a pin by filling ChatGPT input and submitting
- * If ChatGPT is currently generating, queues the pin instead
- * Optionally deletes the pin after use
- * 
- * @param {number} index - Index of pin in pins array
- * @param {boolean} [shouldDelete=false] - Whether to delete pin after use
- * @returns {void}
- */
+// Use a pin (fill the ChatGPT input)
 function usePin(index, shouldDelete = false) {
   if (index < 0 || index >= pins.length) {
     console.error('Invalid pin index:', index);
@@ -1857,13 +1642,7 @@ function cancelQueue() {
   renderPins();
 }
 
-/**
- * Watches for ChatGPT to finish generating so queued pin can be submitted
- * Polls every 500ms until ChatGPT is ready or queue is cancelled
- * Automatically submits the queued pin when ChatGPT becomes available
- * 
- * @returns {void}
- */
+// Watch for ChatGPT to finish processing so we can submit the queued pin
 function watchForChatGPTReady() {
   if (isWatchingForSubmit) return; // Already watching
 
@@ -2051,7 +1830,7 @@ function deletePin(index) {
 
 // Listen for messages from background script
 browser.runtime.onMessage.addListener((message) => {
-  debugLog("Prompt Pins: Message received in content script:", message);
+  console.log("Prompt Pins: Message received in content script:", message);
 
   if (message.action === 'createPin') {
     // Context menu: create pin from selected text
@@ -2059,28 +1838,28 @@ browser.runtime.onMessage.addListener((message) => {
     return Promise.resolve({success: true});
   } else if (message.action === 'create-pin') {
     // Keyboard shortcut: Ctrl+Shift+K - create pin from current selection
-    debugLog('Prompt Pins: Create pin shortcut triggered');
+    console.log("Prompt Pins: Create pin shortcut triggered");
     const selectedText = getSelectedText();
     if (selectedText) {
-      debugLog('Prompt Pins: Text selected, creating pin with context');
+      console.log("Prompt Pins: Text selected, creating pin with context");
       createPin(selectedText);
     } else {
-      debugLog('Prompt Pins: No text selected, opening manual creation form');
+      console.log("Prompt Pins: No text selected, opening manual creation form");
       createPin(''); // Empty string triggers manual creation
     }
     return Promise.resolve({success: true});
   } else if (message.action === 'send-immediately') {
     // Keyboard shortcut: Ctrl+Shift+L - send selected text immediately
-    debugLog('Prompt Pins: Send immediately shortcut triggered');
+    console.log("Prompt Pins: Send immediately shortcut triggered");
     sendImmediately();
     return Promise.resolve({success: true});
   } else if (message.action === 'use-next-pin') {
     // Keyboard shortcut: Ctrl+Shift+U - use next pin
-    debugLog('Prompt Pins: Use next pin shortcut triggered');
+    console.log("Prompt Pins: Use next pin shortcut triggered");
     if (pins.length > 0) {
       usePin(0, true);
     } else {
-      debugLog('Prompt Pins: No pins available');
+      console.log("Prompt Pins: No pins available");
     }
     return Promise.resolve({success: true});
   }
@@ -2092,7 +1871,6 @@ browser.runtime.onMessage.addListener((message) => {
 
 // Watch for URL changes (when user switches chats)
 let lastChatId = getCurrentChatId();
-let chatChangeInterval = null;
 
 function checkForChatChange() {
   const currentChatId = getCurrentChatId();
@@ -2103,25 +1881,8 @@ function checkForChatChange() {
   }
 }
 
-// Start watching for chat changes
-function startChatChangeWatcher() {
-  // Clear any existing interval first
-  if (chatChangeInterval) {
-    clearInterval(chatChangeInterval);
-  }
-  chatChangeInterval = setInterval(checkForChatChange, TIMINGS.CHAT_CHANGE_CHECK);
-}
-
-// Stop watching for chat changes (cleanup)
-function stopChatChangeWatcher() {
-  if (chatChangeInterval) {
-    clearInterval(chatChangeInterval);
-    chatChangeInterval = null;
-  }
-}
-
-// Start watching for chat changes on load
-startChatChangeWatcher();
+// Check for chat changes periodically
+setInterval(checkForChatChange, TIMINGS.CHAT_CHANGE_CHECK);
 
 // ============================================================================
 // INITIALIZATION
@@ -2129,70 +1890,59 @@ startChatChangeWatcher();
 
 // Initialize or reconnect to existing sidebar
 async function initializeSidebar() {
-  try {
-    // Load saved sidebar state first
-    await loadSidebarState();
+  // Load saved sidebar state first
+  await loadSidebarState();
 
-    // Check if sidebar already exists
-    const existingSidebar = document.getElementById('prompt-pins-sidebar');
+  // Check if sidebar already exists
+  const existingSidebar = document.getElementById('prompt-pins-sidebar');
 
-    if (existingSidebar) {
-      debugLog('Prompt Pins: Reconnecting to existing sidebar');
+  if (existingSidebar) {
+    console.log('Prompt Pins: Reconnecting to existing sidebar');
 
-      // Reconnect to cached elements
-      cachedElements.sidebar = existingSidebar;
-      cachedElements.pinsList = document.getElementById('pins-list');
-      cachedElements.nextBtn = document.getElementById('next-pin');
-      cachedElements.clearBtn = document.getElementById('clear-all-pins');
-      cachedElements.toggleBtn = document.getElementById('toggle-pins');
+    // Reconnect to cached elements
+    cachedElements.sidebar = existingSidebar;
+    cachedElements.pinsList = document.getElementById('pins-list');
+    cachedElements.nextBtn = document.getElementById('next-pin');
+    cachedElements.clearBtn = document.getElementById('clear-all-pins');
+    cachedElements.toggleBtn = document.getElementById('toggle-pins');
 
-      // Apply saved sidebar state to existing sidebar
-      if (!sidebarOpen) {
-        existingSidebar.classList.add('collapsed');
-        if (cachedElements.toggleBtn) {
-          updateToggleButton(cachedElements.toggleBtn, false);
-        }
-      } else {
-        existingSidebar.classList.remove('collapsed');
-        if (cachedElements.toggleBtn) {
-          updateToggleButton(cachedElements.toggleBtn, true);
-        }
-      }
-
-      // Reattach event listeners (in case they were lost)
+    // Apply saved sidebar state to existing sidebar
+    if (!sidebarOpen) {
+      existingSidebar.classList.add('collapsed');
       if (cachedElements.toggleBtn) {
-        cachedElements.toggleBtn.addEventListener('click', toggleSidebar);
+        updateToggleButton(cachedElements.toggleBtn, false);
       }
-      if (cachedElements.clearBtn) {
-        cachedElements.clearBtn.addEventListener('click', confirmClearAll);
-      }
-      if (cachedElements.nextBtn) {
-        cachedElements.nextBtn.addEventListener('click', () => {
-          if (pins.length > 0) {
-            usePin(0, true);
-          }
-        });
-      }
-
-      // Load and render pins
-      await loadPins();
     } else {
-      // Create new sidebar
-      createSidebar();
+      existingSidebar.classList.remove('collapsed');
+      if (cachedElements.toggleBtn) {
+        updateToggleButton(cachedElements.toggleBtn, true);
+      }
     }
 
-    // Start login state watcher
-    startLoginStateWatcher();
-  } catch (error) {
-    console.error('Prompt Pins: Failed to initialize sidebar:', error);
-    // Try to create sidebar anyway as fallback
-    try {
-      createSidebar();
-      startLoginStateWatcher();
-    } catch (fallbackError) {
-      console.error('Prompt Pins: Critical initialization failure:', fallbackError);
+    // Reattach event listeners (in case they were lost)
+    if (cachedElements.toggleBtn) {
+      cachedElements.toggleBtn.addEventListener('click', toggleSidebar);
     }
+    if (cachedElements.clearBtn) {
+      cachedElements.clearBtn.addEventListener('click', confirmClearAll);
+    }
+    if (cachedElements.nextBtn) {
+      cachedElements.nextBtn.addEventListener('click', () => {
+        if (pins.length > 0) {
+          usePin(0, true);
+        }
+      });
+    }
+
+    // Load and render pins
+    loadPins();
+  } else {
+    // Create new sidebar
+    createSidebar();
   }
+
+  // Start login state watcher
+  startLoginStateWatcher();
 }
 
 // Initialize when page loads
