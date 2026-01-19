@@ -451,6 +451,26 @@ function stopLoginStateWatcher() {
 // HELPER FUNCTIONS - PIN OPERATIONS
 // ============================================================================
 
+/**
+ * Gets the appropriate prefix for a pin based on its context
+ * Handles cross-chat pins with actual chat titles
+ * 
+ * @param {Object} pin - The pin object
+ * @param {boolean} isFromDifferentChat - Whether pin is from a different chat
+ * @param {string} defaultPrefix - The prefix to use if not cross-chat (EXPAND_PREFIX or REGARDING_PREFIX)
+ * @returns {string} The appropriate prefix text
+ */
+function getPinPrefix(pin, isFromDifferentChat, defaultPrefix) {
+  if (!isFromDifferentChat) {
+    return defaultPrefix;
+  }
+  
+  // Cross-chat pin: use actual chat title if available
+  return pin.chatTitle 
+    ? `From another ChatGPT conversation (${pin.chatTitle})`
+    : UI_TEXT.CROSS_CHAT_PREFIX;
+}
+
 // Fill ChatGPT input with pin content
 function fillInputWithPin(pin) {
   const inputElement = getChatGPTInput();
@@ -461,7 +481,7 @@ function fillInputWithPin(pin) {
   const isFromDifferentChat = pin.chatId && currentChatId && pin.chatId !== currentChatId;
 
   if (pin.comment) {
-    const prefix = isFromDifferentChat ? UI_TEXT.CROSS_CHAT_PREFIX : UI_TEXT.REGARDING_PREFIX;
+    const prefix = getPinPrefix(pin, isFromDifferentChat, UI_TEXT.REGARDING_PREFIX);
     const regardingP = document.createElement('p');
     regardingP.textContent = `${prefix}: "${pin.text}"`;
     inputElement.appendChild(regardingP);
@@ -480,8 +500,8 @@ function fillInputWithPin(pin) {
       // Manual pin: send text as-is
       p.textContent = pin.text;
     } else {
-      // Text-based pin: add prefix
-      const prefix = isFromDifferentChat ? UI_TEXT.CROSS_CHAT_PREFIX : UI_TEXT.EXPAND_PREFIX;
+      // Text-based pin: add prefix (with chat title for cross-chat pins)
+      const prefix = getPinPrefix(pin, isFromDifferentChat, UI_TEXT.EXPAND_PREFIX);
       p.textContent = `${prefix}: "${pin.text}"`;
     }
     inputElement.appendChild(p);

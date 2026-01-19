@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.2.0] - 2026-01-18
 
 ### Added
+- **Cross-chat pin naming** - Pins from other conversations now show the actual chat name
+  - When submitting a pin from a different chat, shows "From another ChatGPT conversation (Chat Name): [pin text]"
+  - Example: "From another ChatGPT conversation (Wise Fool and Wit): Compare Mistborn's ending..."
+  - Provides better context than generic "From another conversation" message
+  - Falls back to generic message if chat title is unavailable
+  - Applied to both comment-based pins and text-based pins
 - **Inline editing for pin fields** - Edit pin content directly within the sidebar
   - Edit icon (✏️) appears on hover for editable fields
   - Click on text or icon to enter edit mode with inline textarea
@@ -65,6 +71,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Provides smooth visual feedback without disrupting user's layout preference
 
 ### Technical
+- **Cross-chat pin naming implementation**:
+  - Added `getPinPrefix(pin, isFromDifferentChat, defaultPrefix)` helper function with JSDoc
+  - Eliminates code duplication by centralizing prefix logic in one place
+  - Returns dynamic prefix based on pin.chatTitle availability
+  - Handles both EXPAND_PREFIX and REGARDING_PREFIX contexts
+  - Early return pattern for non-cross-chat pins for efficiency
+  - Follows codebase pattern of focused helper functions
 - **Inline editing implementation**:
   - Added `enterEditMode(wrapper)` function to handle edit state
   - Modified `renderPins()` to distinguish between pin types using `selectedText` field
