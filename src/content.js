@@ -1885,28 +1885,28 @@ browser.runtime.onMessage.addListener((message) => {
     return Promise.resolve({success: true});
   } else if (message.action === 'create-pin') {
     // Keyboard shortcut: Ctrl+Shift+K - create pin from current selection
-    debugLog("Prompt Pins: Create pin shortcut triggered");
+    debugLog('Prompt Pins: Create pin shortcut triggered');
     const selectedText = getSelectedText();
     if (selectedText) {
-      debugLog("Prompt Pins: Text selected, creating pin with context");
+      debugLog('Prompt Pins: Text selected, creating pin with context');
       createPin(selectedText);
     } else {
-      debugLog("Prompt Pins: No text selected, opening manual creation form");
+      debugLog('Prompt Pins: No text selected, opening manual creation form');
       createPin(''); // Empty string triggers manual creation
     }
     return Promise.resolve({success: true});
   } else if (message.action === 'send-immediately') {
     // Keyboard shortcut: Ctrl+Shift+L - send selected text immediately
-    debugLog("Prompt Pins: Send immediately shortcut triggered");
+    debugLog('Prompt Pins: Send immediately shortcut triggered');
     sendImmediately();
     return Promise.resolve({success: true});
   } else if (message.action === 'use-next-pin') {
     // Keyboard shortcut: Ctrl+Shift+U - use next pin
-    debugLog("Prompt Pins: Use next pin shortcut triggered");
+    debugLog('Prompt Pins: Use next pin shortcut triggered');
     if (pins.length > 0) {
       usePin(0, true);
     } else {
-      debugLog("Prompt Pins: No pins available");
+      debugLog('Prompt Pins: No pins available');
     }
     return Promise.resolve({success: true});
   }
