@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.2.0] - 2026-01-18
 
 ### Added
+- **Welcome animation for new users** - First-time user onboarding for logged-out users
+  - Sidebar expands for 2.5 seconds on first visit to show users the interface
+  - Automatically collapses to reveal login button
+  - Toggle button pulses 2 times with green glow (scale animation + brand color) to draw attention and show where sidebar went
+  - Uses `hasSeenWelcome` flag stored in browser.storage.local so animation only plays once per user
+  - Only triggers for logged-out users to avoid disrupting logged-in experience
+  - Integrates seamlessly with existing auto-collapse behavior
 - **Keyboard shortcuts help UI** - Comprehensive keyboard shortcuts help system
   - [?] help icon button positioned next to Clear button in header
   - Hover tooltip displays all keyboard shortcuts for current browser

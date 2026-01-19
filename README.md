@@ -269,6 +269,13 @@ Copyright (c) 2025 Prompt Pins Contributors
   - Doesn't save the temporary expansion - maintains your original collapsed state
   - Provides smooth visual feedback without disrupting your layout
 
+- **Welcome animation for new users** - First-time logged-out users get a brief onboarding experience
+  - Sidebar expands for 2.5 seconds on first visit to show the interface
+  - Automatically collapses to reveal the login button
+  - Toggle button pulses 2 times with green glow to show where the sidebar went
+  - Only plays once per user (stored in browser.storage.local)
+  - Only triggers for logged-out users
+
 **Critical Fixes:**
 
 - **Login button coverage issue resolved**
