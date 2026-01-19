@@ -100,7 +100,7 @@ See [PRIVACY.md](PRIVACY.md) for complete details.
 
 ## Known Issues
 
-- **Chrome Double Panel:** Occasionally two sidebar panels may appear. Minimizing one reveals the other. Refresh the page if this occurs.
+Currently no known issues! If you find any bugs, please [report them](https://github.com/BigLangerStyle/prompt-pins-chatgpt/issues).
 
 ## Screenshots
 
