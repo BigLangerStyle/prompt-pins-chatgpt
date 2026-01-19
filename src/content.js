@@ -249,39 +249,44 @@ function isLoginPage() {
 
 // Trigger welcome animation for first-time logged-out users
 async function triggerWelcomeAnimation() {
-  const sidebar = cachedElements.sidebar;
-  const toggle = cachedElements.toggleBtn;
+  try {
+    const sidebar = cachedElements.sidebar;
+    const toggle = cachedElements.toggleBtn;
 
-  if (!sidebar || !toggle) return;
+    if (!sidebar || !toggle) return;
 
-  debugLog('Prompt Pins: Triggering welcome animation');
+    debugLog('Prompt Pins: Triggering welcome animation');
 
-  // Mark welcome as seen IMMEDIATELY to prevent double-triggering from interval
-  hasSeenWelcome = true;
-  await saveWelcomeState();
+    // Mark welcome as seen IMMEDIATELY to prevent double-triggering from interval
+    hasSeenWelcome = true;
+    await saveWelcomeState();
 
-  // 1. Ensure sidebar is expanded
-  sidebar.classList.remove('collapsed');
-  updateToggleButton(toggle, true);
-  sidebarOpen = true;
+    // 1. Ensure sidebar is expanded
+    sidebar.classList.remove('collapsed');
+    updateToggleButton(toggle, true);
+    sidebarOpen = true;
 
-  // 2. Wait 2.5 seconds
-  await new Promise(resolve => setTimeout(resolve, TIMINGS.WELCOME_ANIMATION_DELAY));
+    // 2. Wait 2.5 seconds
+    await new Promise(resolve => setTimeout(resolve, TIMINGS.WELCOME_ANIMATION_DELAY));
 
-  // 3. Collapse the sidebar
-  sidebar.classList.add('collapsed');
-  updateToggleButton(toggle, false);
-  sidebarOpen = false;
+    // 3. Collapse the sidebar
+    sidebar.classList.add('collapsed');
+    updateToggleButton(toggle, false);
+    sidebarOpen = false;
 
-  // 4. Add pulse animation to toggle button
-  toggle.classList.add('toggle-pulse');
+    // 4. Add pulse animation to toggle button
+    toggle.classList.add('toggle-pulse');
 
-  // 5. Remove pulse animation after it completes (2s for both pulses)
-  setTimeout(() => {
-    toggle.classList.remove('toggle-pulse');
-  }, TIMINGS.PULSE_ANIMATION_DURATION);
+    // 5. Remove pulse animation after it completes (2s for both pulses)
+    setTimeout(() => {
+      toggle.classList.remove('toggle-pulse');
+    }, TIMINGS.PULSE_ANIMATION_DURATION);
 
-  debugLog('Prompt Pins: Welcome animation complete');
+    debugLog('Prompt Pins: Welcome animation complete');
+  } catch (error) {
+    console.error('Prompt Pins: Welcome animation failed:', error);
+    // Animation failure is non-critical, continue normally
+  }
 }
 
 
@@ -691,14 +696,26 @@ function autoCollapseSidebar() {
 
 // Load pins from storage
 async function loadPins() {
-  const result = await browser.storage.local.get('pins');
-  pins = result.pins || [];
-  renderPins();
+  try {
+    const result = await browser.storage.local.get('pins');
+    pins = result.pins || [];
+    renderPins();
+  } catch (error) {
+    console.error('Prompt Pins: Failed to load pins from storage:', error);
+    // Graceful fallback: start with empty pins array
+    pins = [];
+    renderPins();
+  }
 }
 
 // Save pins to storage
 async function savePins() {
-  await browser.storage.local.set({ pins });
+  try {
+    await browser.storage.local.set({ pins });
+  } catch (error) {
+    console.error('Prompt Pins: Failed to save pins to storage:', error);
+    // Note: User's changes are still in memory, just not persisted
+  }
 }
 
 // ============================================================================
@@ -707,21 +724,36 @@ async function savePins() {
 
 // Load sidebar state from storage
 async function loadSidebarState() {
-  const result = await browser.storage.local.get(['sidebarOpen', 'hasSeenWelcome']);
-  // If no saved state exists, default to true (open)
-  sidebarOpen = result.sidebarOpen !== undefined ? result.sidebarOpen : true;
-  // Check if user has seen the welcome animation
-  hasSeenWelcome = result.hasSeenWelcome !== undefined ? result.hasSeenWelcome : false;
+  try {
+    const result = await browser.storage.local.get(['sidebarOpen', 'hasSeenWelcome']);
+    // If no saved state exists, default to true (open)
+    sidebarOpen = result.sidebarOpen !== undefined ? result.sidebarOpen : true;
+    // Check if user has seen the welcome animation
+    hasSeenWelcome = result.hasSeenWelcome !== undefined ? result.hasSeenWelcome : false;
+  } catch (error) {
+    console.error('Prompt Pins: Failed to load sidebar state from storage:', error);
+    // Use defaults
+    sidebarOpen = true;
+    hasSeenWelcome = false;
+  }
 }
 
 // Save sidebar state to storage
 async function saveSidebarState() {
-  await browser.storage.local.set({ sidebarOpen });
+  try {
+    await browser.storage.local.set({ sidebarOpen });
+  } catch (error) {
+    console.error('Prompt Pins: Failed to save sidebar state to storage:', error);
+  }
 }
 
 // Save welcome animation state to storage
 async function saveWelcomeState() {
-  await browser.storage.local.set({ hasSeenWelcome });
+  try {
+    await browser.storage.local.set({ hasSeenWelcome });
+  } catch (error) {
+    console.error('Prompt Pins: Failed to save welcome state to storage:', error);
+  }
 }
 
 
@@ -1905,59 +1937,70 @@ setInterval(checkForChatChange, TIMINGS.CHAT_CHANGE_CHECK);
 
 // Initialize or reconnect to existing sidebar
 async function initializeSidebar() {
-  // Load saved sidebar state first
-  await loadSidebarState();
+  try {
+    // Load saved sidebar state first
+    await loadSidebarState();
 
-  // Check if sidebar already exists
-  const existingSidebar = document.getElementById('prompt-pins-sidebar');
+    // Check if sidebar already exists
+    const existingSidebar = document.getElementById('prompt-pins-sidebar');
 
-  if (existingSidebar) {
-    debugLog('Prompt Pins: Reconnecting to existing sidebar');
+    if (existingSidebar) {
+      debugLog('Prompt Pins: Reconnecting to existing sidebar');
 
-    // Reconnect to cached elements
-    cachedElements.sidebar = existingSidebar;
-    cachedElements.pinsList = document.getElementById('pins-list');
-    cachedElements.nextBtn = document.getElementById('next-pin');
-    cachedElements.clearBtn = document.getElementById('clear-all-pins');
-    cachedElements.toggleBtn = document.getElementById('toggle-pins');
+      // Reconnect to cached elements
+      cachedElements.sidebar = existingSidebar;
+      cachedElements.pinsList = document.getElementById('pins-list');
+      cachedElements.nextBtn = document.getElementById('next-pin');
+      cachedElements.clearBtn = document.getElementById('clear-all-pins');
+      cachedElements.toggleBtn = document.getElementById('toggle-pins');
 
-    // Apply saved sidebar state to existing sidebar
-    if (!sidebarOpen) {
-      existingSidebar.classList.add('collapsed');
-      if (cachedElements.toggleBtn) {
-        updateToggleButton(cachedElements.toggleBtn, false);
-      }
-    } else {
-      existingSidebar.classList.remove('collapsed');
-      if (cachedElements.toggleBtn) {
-        updateToggleButton(cachedElements.toggleBtn, true);
-      }
-    }
-
-    // Reattach event listeners (in case they were lost)
-    if (cachedElements.toggleBtn) {
-      cachedElements.toggleBtn.addEventListener('click', toggleSidebar);
-    }
-    if (cachedElements.clearBtn) {
-      cachedElements.clearBtn.addEventListener('click', confirmClearAll);
-    }
-    if (cachedElements.nextBtn) {
-      cachedElements.nextBtn.addEventListener('click', () => {
-        if (pins.length > 0) {
-          usePin(0, true);
+      // Apply saved sidebar state to existing sidebar
+      if (!sidebarOpen) {
+        existingSidebar.classList.add('collapsed');
+        if (cachedElements.toggleBtn) {
+          updateToggleButton(cachedElements.toggleBtn, false);
         }
-      });
+      } else {
+        existingSidebar.classList.remove('collapsed');
+        if (cachedElements.toggleBtn) {
+          updateToggleButton(cachedElements.toggleBtn, true);
+        }
+      }
+
+      // Reattach event listeners (in case they were lost)
+      if (cachedElements.toggleBtn) {
+        cachedElements.toggleBtn.addEventListener('click', toggleSidebar);
+      }
+      if (cachedElements.clearBtn) {
+        cachedElements.clearBtn.addEventListener('click', confirmClearAll);
+      }
+      if (cachedElements.nextBtn) {
+        cachedElements.nextBtn.addEventListener('click', () => {
+          if (pins.length > 0) {
+            usePin(0, true);
+          }
+        });
+      }
+
+      // Load and render pins
+      await loadPins();
+    } else {
+      // Create new sidebar
+      createSidebar();
     }
 
-    // Load and render pins
-    loadPins();
-  } else {
-    // Create new sidebar
-    createSidebar();
+    // Start login state watcher
+    startLoginStateWatcher();
+  } catch (error) {
+    console.error('Prompt Pins: Failed to initialize sidebar:', error);
+    // Try to create sidebar anyway as fallback
+    try {
+      createSidebar();
+      startLoginStateWatcher();
+    } catch (fallbackError) {
+      console.error('Prompt Pins: Critical initialization failure:', fallbackError);
+    }
   }
-
-  // Start login state watcher
-  startLoginStateWatcher();
 }
 
 // Initialize when page loads
