@@ -6,6 +6,7 @@ A browser extension for Firefox and Chrome that lets you save questions and prom
 
 - **Pin Any Text**: Highlight text in a ChatGPT conversation and right-click to pin it
 - **Manual Pin Creation**: Create pins directly from the sidebar with the "+ New" button (no text selection needed)
+- **Inline Editing**: Click on pin text or comments to edit them directly in the sidebar (Enter to save, Shift+Enter for new line)
 - **Visual Feedback**: Newly created pins show a subtle highlight animation for confirmation
 - **Keyboard Shortcuts**: Use hotkeys for quick pin creation and usage (works with or without text selected)
 - **Smart Queue System**: Automatically queues pins if ChatGPT is busy, submits when ready

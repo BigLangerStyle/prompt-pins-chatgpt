@@ -6,6 +6,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Unreleased]
+
+### Added
+- **Inline editing for pin fields** - Edit pin content directly within the sidebar
+  - Edit icon (✏️) appears on hover for editable fields
+  - Click on text or icon to enter edit mode with inline textarea
+  - Save/Cancel buttons for confirming or discarding changes
+  - Pin Type 1 (from highlighted text): Editable comment field, read-only quoted text
+  - Pin Type 2 (manual creation): Fully editable plain text field
+  - Keyboard shortcuts: Enter to save, Shift+Enter for new line, Escape to cancel
+  - Highlight animation plays on successful edits for visual confirmation
+  - Empty values prevented to maintain data integrity
+  - Auto-resizing textarea adapts to content length
+
+### Technical
+- **Inline editing implementation**:
+  - Added `enterEditMode(wrapper)` function to handle edit state
+  - Modified `renderPins()` to distinguish between pin types using `selectedText` field
+  - Created wrapper elements (`.pin-comment-wrapper`, `.pin-text-wrapper`) for editable fields
+  - Added edit icon styling with hover effects and smooth transitions
+  - Implemented keyboard navigation (Enter/Shift+Enter/Escape)
+  - Updated `showCommentInput()` to save `selectedText` field for pin type detection
+  - Added CSS for `.edit-icon`, `.pin-editable-field`, and hover states
+
+
 ## [1.2.0] - 2026-01-18
 
 ### Added
