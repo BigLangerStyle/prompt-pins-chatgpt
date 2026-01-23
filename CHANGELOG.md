@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.2.1] - 2026-01-23
+
+### Added
+- **Help icon improvements** - Enhanced keyboard shortcuts help button
+  - Replaced `[?]` text with ⓘ (Unicode circled lowercase i) for industry-standard info icon appearance
+  - Icon now styled in brand green color (#10a37f) for better visual consistency
+  - Increased icon size to 20px for improved visibility and easier clicking
+  - Tooltip footer now displays app version dynamically from manifest file on separate line
+  - Version displayed in green as "Version 1.2.1" above customization instructions
+  - Clear separation between version info and "Customize shortcuts in browser settings" text
+
+### Technical
+- **Dynamic version display implementation**:
+  - Version now fetched from manifest at runtime using `browser.runtime.getManifest().version`
+  - Eliminates need to manually update version string in content.js
+  - Ensures version display always matches actual extension version
+
+
 ## [1.2.0] - 2026-01-18 to 2026-01-19
 
 ### Added
@@ -40,8 +58,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Only triggers for logged-out users to avoid disrupting logged-in experience
   - Integrates seamlessly with existing auto-collapse behavior
 - **Keyboard shortcuts help UI** - Comprehensive keyboard shortcuts help system
-  - [?] help icon button positioned next to Clear button in header
+  - ⓘ info icon button (green, industry-standard) positioned next to Clear button in header
   - Hover tooltip displays all keyboard shortcuts for current browser
+  - Footer shows app version (v1.2.0) and customization instructions
   - Browser-aware: Shows Firefox shortcuts (Ctrl+Alt+P/S/N) or Chrome shortcuts (Ctrl+Shift+K/L/U)
   - Platform-aware: Displays Cmd on Mac, Ctrl on Windows/Linux
   - Includes instructions for customizing shortcuts in browser settings

@@ -178,6 +178,13 @@ Copyright (c) 2025 Prompt Pins Contributors
 
 ## Release Notes
 
+### Version 1.2.1 (January 23, 2026)
+
+**UI Improvements**
+- Help icon replaced with green ⓘ (circled lowercase i) for industry-standard appearance
+- Icon size increased to 20px for better visibility
+- Version number now displayed dynamically in keyboard shortcuts tooltip
+
 ### Version 1.2.0 (January 18-19, 2026)
 
 **New Features**
@@ -187,7 +194,7 @@ Copyright (c) 2025 Prompt Pins Contributors
 - Inline editing of pin text and comments
 - Cross-chat pin naming shows source conversation
 - Branded minimize button with Prompt Pins icon
-- Keyboard shortcuts help UI with [?] button
+- Keyboard shortcuts help UI with ⓘ info button (green, shows version)
 
 **Bug Fixes**
 - Firefox inline edit cursor positioning (draggable parent conflict resolved)
