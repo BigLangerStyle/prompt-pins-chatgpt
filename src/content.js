@@ -1251,6 +1251,14 @@ function saveInlinePin(textarea, hideForm) {
   const newPinIndex = pins.length - 1;
   highlightNewPin(newPinIndex);
 
+  // If sidebar was auto-expanded (keyboard shortcut with no text), schedule auto-collapse
+  if (isAutoExpanded) {
+    // Wait for highlight animation to complete (1.5s) + small buffer
+    autoCollapseTimeout = setTimeout(() => {
+      autoCollapseSidebar();
+    }, TIMINGS.AUTO_COLLAPSE_DELAY); // 2 seconds total: 1.5s animation + 0.5s buffer
+  }
+
   hideForm();
 }
 
@@ -1594,17 +1602,16 @@ function createPin(text) {
   const isManualCreation = !text || text.trim() === '';
 
   if (isManualCreation) {
-    // Manual creation: expand sidebar if needed, trigger inline form, keep expanded
+    // Manual creation: expand sidebar if needed, trigger inline form
     if (!sidebarOpen) {
-      sidebarOpen = true;
-      const sidebar = cachedElements.sidebar;
-      const toggle = cachedElements.toggleBtn;
-
-      if (sidebar && toggle) {
-        sidebar.classList.remove('collapsed');
-        updateToggleButton(toggle, true);
-        saveSidebarState();
+      // Clear any existing auto-collapse timeout
+      if (autoCollapseTimeout) {
+        clearTimeout(autoCollapseTimeout);
+        autoCollapseTimeout = null;
       }
+
+      // Auto-expand sidebar (sets isAutoExpanded flag)
+      autoExpandSidebar();
     }
 
     // Trigger the inline form
