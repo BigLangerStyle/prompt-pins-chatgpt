@@ -190,6 +190,7 @@ Copyright (c) 2025 Prompt Pins Contributors
 - Keyboard shortcuts help UI with [?] button
 
 **Bug Fixes**
+- Firefox inline edit cursor positioning (draggable parent conflict resolved)
 - Auto-collapse after keyboard shortcut pin creation (matches selection-based behavior)
 - Login page sidebar no longer covers login button
 - New users now see expanded sidebar after first login

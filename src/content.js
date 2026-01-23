@@ -1385,6 +1385,12 @@ function enterEditMode(wrapper) {
   
   if (!editableField) return;
   
+  // Fix for Firefox: Disable dragging on parent pin-item to prevent conflicts with textarea interaction
+  const pinItem = wrapper.closest('.pin-item');
+  if (pinItem) {
+    pinItem.setAttribute('draggable', 'false');
+  }
+  
   // Hide the field and icon
   editableField.style.display = 'none';
   if (editIcon) editIcon.style.display = 'none';
@@ -1404,6 +1410,11 @@ function enterEditMode(wrapper) {
   textarea.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
   textarea.style.resize = 'vertical';
   textarea.style.marginBottom = '8px';
+  
+  // Prevent drag events from interfering with text selection
+  textarea.addEventListener('mousedown', (e) => {
+    e.stopPropagation();
+  });
   
   // Create button container
   const buttonContainer = document.createElement('div');
