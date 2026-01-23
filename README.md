@@ -180,10 +180,13 @@ Copyright (c) 2025 Prompt Pins Contributors
 
 ### Version 1.2.1 (January 23, 2026)
 
-**UI Improvements**
-- Help icon replaced with green ⓘ (circled lowercase i) for industry-standard appearance
-- Icon size increased to 20px for better visibility
-- Version number now displayed dynamically in keyboard shortcuts tooltip
+**Updates:**
+- **New extension icon** - Modern teal asterisk design with dark background
+- **Help icon update** - Standard ℹ️ info icon replaces `[?]` in sidebar header
+
+**Bug Fixes:**
+- Fixed sidebar auto-collapse after keyboard shortcut pin creation
+- Fixed cursor placement when clicking in inline edit textarea
 
 ### Version 1.2.0 (January 18-19, 2026)
 

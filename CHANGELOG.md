@@ -8,20 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.2.1] - 2026-01-23
 
-### Added
-- **Help icon improvements** - Enhanced keyboard shortcuts help button
-  - Replaced `[?]` text with ⓘ (Unicode circled lowercase i) for industry-standard info icon appearance
-  - Icon now styled in brand green color (#10a37f) for better visual consistency
-  - Increased icon size to 20px for improved visibility and easier clicking
-  - Tooltip footer now displays app version dynamically from manifest file on separate line
-  - Version displayed in green as "Version 1.2.1" above customization instructions
-  - Clear separation between version info and "Customize shortcuts in browser settings" text
+### Changed
+- **Updated extension icons** - New modern teal asterisk design on dark background for improved visibility and recognition
+- **Updated help icon** - Replaced `[?]` with standard `ℹ️` info icon in sidebar header
 
-### Technical
-- **Dynamic version display implementation**:
-  - Version now fetched from manifest at runtime using `browser.runtime.getManifest().version`
-  - Eliminates need to manually update version string in content.js
-  - Ensures version display always matches actual extension version
+### Fixed
+- **Auto-collapse behavior** - Sidebar now properly auto-collapses after creating pins via keyboard shortcut
+- **Inline edit cursor placement** - Fixed issue where clicking in textarea during edit mode wouldn't position cursor correctly
 
 
 ## [1.2.0] - 2026-01-18 to 2026-01-19
