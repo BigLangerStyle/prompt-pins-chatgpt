@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.2.0] - 2026-01-18 to 2026-01-19
 
 ### Added
+- **Firefox inline edit cursor positioning fix** - Resolved Firefox-specific textarea interaction issue
+  - Fixed bug where clicking inside textarea during inline edit wouldn't position cursor
+  - Root cause: Parent `.pin-item` with `draggable="true"` intercepted mouse events in Firefox
+  - Solution: Temporarily disable dragging on parent pin item when entering edit mode
+  - Added `stopPropagation()` to textarea's mousedown event to prevent event bubbling
+  - Draggable functionality automatically re-enabled on save/cancel via `renderPins()`
+  - Improves inline editing UX specifically in Firefox while maintaining drag-and-drop elsewhere
 - **Cross-chat pin naming** - Pins from other conversations now show the actual chat name
   - When submitting a pin from a different chat, shows "From another ChatGPT conversation (Chat Name): [pin text]"
   - Example: "From another ChatGPT conversation (Wise Fool and Wit): Compare Mistborn's ending..."
@@ -79,6 +86,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Early return pattern for non-cross-chat pins for efficiency
   - Follows codebase pattern of focused helper functions
 - **Inline editing implementation**:
+  - Fixed Firefox textarea cursor positioning by disabling parent draggable during edit mode
+  - In `enterEditMode()`: Find parent `.pin-item`, set `draggable="false"` temporarily
+  - Added mousedown event listener with `stopPropagation()` to prevent drag interference
+  - Draggable automatically restored via `renderPins()` called by save/cancel handlers
   - Added `enterEditMode(wrapper)` function to handle edit state
   - Modified `renderPins()` to distinguish between pin types using `selectedText` field
   - Created wrapper elements (`.pin-comment-wrapper`, `.pin-text-wrapper`) for editable fields
