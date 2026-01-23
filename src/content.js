@@ -585,7 +585,7 @@ function createHelpButton() {
   const helpBtn = document.createElement('button');
   helpBtn.id = 'keyboard-shortcuts-help';
   helpBtn.className = 'keyboard-shortcuts-help-btn';
-  helpBtn.textContent = '?';
+  helpBtn.textContent = 'ⓘ';
   helpBtn.setAttribute('aria-label', 'View keyboard shortcuts');
   
   // Create tooltip element
@@ -627,10 +627,17 @@ function createHelpButton() {
   
   tooltip.appendChild(shortcutsContainer);
   
-  // Create footer
+  // Create version display
+  const version = browser.runtime.getManifest().version;
+  const versionDiv = document.createElement('div');
+  versionDiv.className = 'tooltip-version';
+  versionDiv.textContent = `Version ${version}`;
+  tooltip.appendChild(versionDiv);
+  
+  // Create footer with customization instructions
   const footer = document.createElement('div');
   footer.className = 'tooltip-footer';
-  footer.textContent = 'Customize in browser settings';
+  footer.textContent = 'Customize shortcuts in browser settings';
   tooltip.appendChild(footer);
   
   helpBtn.appendChild(tooltip);
