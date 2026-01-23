@@ -162,6 +162,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fallback initialization if main init fails
 
 ### Fixed
+- **Auto-collapse after keyboard shortcut pin creation** - Sidebar now auto-collapses after creating pins via keyboard shortcut with no text selected
+  - When sidebar is collapsed and user creates a pin via keyboard shortcut (without selecting text), sidebar temporarily expands to show the inline creation form
+  - After saving the pin, sidebar now automatically collapses back after ~2 seconds (matching selection-based pin behavior)
+  - Fixed by tracking auto-expansion state in manual pin creation path and scheduling auto-collapse in `saveInlinePin()`
+  - Provides consistent UX across all pin creation methods
 - **Login Layout Issue** - Sidebar no longer covers the "Log in" button when not logged in
   - New users now default to expanded sidebar after first login to showcase features
   - Sidebar automatically expands for new users who log in for the first time
