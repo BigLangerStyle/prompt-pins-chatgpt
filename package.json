@@ -1,12 +1,12 @@
 {
   "name": "prompt-pins-chatgpt",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "Browser extension to save ChatGPT questions for later without breaking conversational flow",
   "scripts": {
     "build:firefox": "node scripts/build-firefox.js",
     "build:chrome": "node scripts/build-chrome.js",
     "build:all": "npm run build:firefox && npm run build:chrome",
-    "dev:firefox": "cd firefox && web-ext run",
+    "dev:firefox": "npm run build:firefox && cd build/firefox && web-ext run",
     "dev:chrome": "npm run build:chrome && echo Load build/chrome in Chrome via chrome://extensions",
     "clean": "node scripts/clean.js"
   },

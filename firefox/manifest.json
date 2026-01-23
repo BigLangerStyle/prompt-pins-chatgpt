@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Prompt Pins for ChatGPT",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "Save questions for later without breaking conversational flow. All data stored locally - nothing leaves your browser.",
   "browser_specific_settings": {
     "gecko": {
@@ -35,19 +35,22 @@
   "commands": {
     "create-pin": {
       "suggested_key": {
-        "default": "Ctrl+Alt+P"
+        "default": "Ctrl+Alt+P",
+        "mac": "Command+Alt+P"
       },
       "description": "Create a pin from selected text"
     },
     "send-immediately": {
       "suggested_key": {
-        "default": "Ctrl+Alt+S"
+        "default": "Ctrl+Alt+S",
+        "mac": "Command+Alt+S"
       },
       "description": "Send selected text immediately (no pin)"
     },
     "use-next-pin": {
       "suggested_key": {
-        "default": "Ctrl+Alt+N"
+        "default": "Ctrl+Alt+N",
+        "mac": "Command+Alt+N"
       },
       "description": "Use the next pin in queue"
     }
