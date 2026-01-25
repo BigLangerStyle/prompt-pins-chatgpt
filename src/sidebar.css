@@ -578,7 +578,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: #9ca3af;
+  color: #10a37f;
   padding: 0;
   width: 28px;
   height: 28px;
@@ -586,7 +586,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 4px;
-  font-size: 14px;
+  font-size: 20px;
   font-weight: 600;
   flex-shrink: 0;
   position: relative;
@@ -607,7 +607,7 @@
   border: 1px solid #3e3e3e;
   border-radius: 8px;
   padding: 12px;
-  min-width: 280px;
+  min-width: 320px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
   z-index: 10000;
   font-size: 13px;
@@ -655,11 +655,19 @@
   font-size: 12px;
 }
 
+.tooltip-version {
+  color: #10a37f;
+  font-size: 11px;
+  padding-top: 10px;
+  text-align: center;
+  font-weight: 600;
+}
+
 .tooltip-footer {
   color: #6b7280;
   font-size: 11px;
-  padding-top: 8px;
-  border-top: 1px solid #3e3e3e;
+  padding-top: 4px;
+  padding-bottom: 2px;
   text-align: center;
 }
 
