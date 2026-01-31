@@ -585,7 +585,7 @@ function createHelpButton() {
   const helpBtn = document.createElement('button');
   helpBtn.id = 'keyboard-shortcuts-help';
   helpBtn.className = 'keyboard-shortcuts-help-btn';
-  helpBtn.textContent = '?';
+  helpBtn.textContent = 'ⓘ';
   helpBtn.setAttribute('aria-label', 'View keyboard shortcuts');
   
   // Create tooltip element
@@ -627,10 +627,17 @@ function createHelpButton() {
   
   tooltip.appendChild(shortcutsContainer);
   
-  // Create footer
+  // Create version display
+  const version = browser.runtime.getManifest().version;
+  const versionDiv = document.createElement('div');
+  versionDiv.className = 'tooltip-version';
+  versionDiv.textContent = `Version ${version}`;
+  tooltip.appendChild(versionDiv);
+  
+  // Create footer with customization instructions
   const footer = document.createElement('div');
   footer.className = 'tooltip-footer';
-  footer.textContent = 'Customize in browser settings';
+  footer.textContent = 'Customize shortcuts in browser settings';
   tooltip.appendChild(footer);
   
   helpBtn.appendChild(tooltip);
@@ -1251,6 +1258,14 @@ function saveInlinePin(textarea, hideForm) {
   const newPinIndex = pins.length - 1;
   highlightNewPin(newPinIndex);
 
+  // If sidebar was auto-expanded (keyboard shortcut with no text), schedule auto-collapse
+  if (isAutoExpanded) {
+    // Wait for highlight animation to complete (1.5s) + small buffer
+    autoCollapseTimeout = setTimeout(() => {
+      autoCollapseSidebar();
+    }, TIMINGS.AUTO_COLLAPSE_DELAY); // 2 seconds total: 1.5s animation + 0.5s buffer
+  }
+
   hideForm();
 }
 
@@ -1377,6 +1392,12 @@ function enterEditMode(wrapper) {
   
   if (!editableField) return;
   
+  // Fix for Firefox: Disable dragging on parent pin-item to prevent conflicts with textarea interaction
+  const pinItem = wrapper.closest('.pin-item');
+  if (pinItem) {
+    pinItem.setAttribute('draggable', 'false');
+  }
+  
   // Hide the field and icon
   editableField.style.display = 'none';
   if (editIcon) editIcon.style.display = 'none';
@@ -1396,6 +1417,11 @@ function enterEditMode(wrapper) {
   textarea.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
   textarea.style.resize = 'vertical';
   textarea.style.marginBottom = '8px';
+  
+  // Prevent drag events from interfering with text selection
+  textarea.addEventListener('mousedown', (e) => {
+    e.stopPropagation();
+  });
   
   // Create button container
   const buttonContainer = document.createElement('div');
@@ -1594,17 +1620,16 @@ function createPin(text) {
   const isManualCreation = !text || text.trim() === '';
 
   if (isManualCreation) {
-    // Manual creation: expand sidebar if needed, trigger inline form, keep expanded
+    // Manual creation: expand sidebar if needed, trigger inline form
     if (!sidebarOpen) {
-      sidebarOpen = true;
-      const sidebar = cachedElements.sidebar;
-      const toggle = cachedElements.toggleBtn;
-
-      if (sidebar && toggle) {
-        sidebar.classList.remove('collapsed');
-        updateToggleButton(toggle, true);
-        saveSidebarState();
+      // Clear any existing auto-collapse timeout
+      if (autoCollapseTimeout) {
+        clearTimeout(autoCollapseTimeout);
+        autoCollapseTimeout = null;
       }
+
+      // Auto-expand sidebar (sets isAutoExpanded flag)
+      autoExpandSidebar();
     }
 
     // Trigger the inline form

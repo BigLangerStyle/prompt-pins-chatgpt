@@ -6,9 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.2.1] - 2026-01-23
+
+### Changed
+- **Updated extension icons** - New modern teal asterisk design on dark background for improved visibility and recognition
+- **Updated help icon** - Replaced `[?]` with standard `ℹ️` info icon in sidebar header
+
+### Fixed
+- **Auto-collapse behavior** - Sidebar now properly auto-collapses after creating pins via keyboard shortcut
+- **Inline edit cursor placement** - Fixed issue where clicking in textarea during edit mode wouldn't position cursor correctly
+
+
 ## [1.2.0] - 2026-01-18 to 2026-01-19
 
 ### Added
+- **Firefox inline edit cursor positioning fix** - Resolved Firefox-specific textarea interaction issue
+  - Fixed bug where clicking inside textarea during inline edit wouldn't position cursor
+  - Root cause: Parent `.pin-item` with `draggable="true"` intercepted mouse events in Firefox
+  - Solution: Temporarily disable dragging on parent pin item when entering edit mode
+  - Added `stopPropagation()` to textarea's mousedown event to prevent event bubbling
+  - Draggable functionality automatically re-enabled on save/cancel via `renderPins()`
+  - Improves inline editing UX specifically in Firefox while maintaining drag-and-drop elsewhere
 - **Cross-chat pin naming** - Pins from other conversations now show the actual chat name
   - When submitting a pin from a different chat, shows "From another ChatGPT conversation (Chat Name): [pin text]"
   - Example: "From another ChatGPT conversation (Wise Fool and Wit): Compare Mistborn's ending..."
@@ -33,8 +51,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Only triggers for logged-out users to avoid disrupting logged-in experience
   - Integrates seamlessly with existing auto-collapse behavior
 - **Keyboard shortcuts help UI** - Comprehensive keyboard shortcuts help system
-  - [?] help icon button positioned next to Clear button in header
+  - ⓘ info icon button (green, industry-standard) positioned next to Clear button in header
   - Hover tooltip displays all keyboard shortcuts for current browser
+  - Footer shows app version (v1.2.0) and customization instructions
   - Browser-aware: Shows Firefox shortcuts (Ctrl+Alt+P/S/N) or Chrome shortcuts (Ctrl+Shift+K/L/U)
   - Platform-aware: Displays Cmd on Mac, Ctrl on Windows/Linux
   - Includes instructions for customizing shortcuts in browser settings
@@ -79,6 +98,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Early return pattern for non-cross-chat pins for efficiency
   - Follows codebase pattern of focused helper functions
 - **Inline editing implementation**:
+  - Fixed Firefox textarea cursor positioning by disabling parent draggable during edit mode
+  - In `enterEditMode()`: Find parent `.pin-item`, set `draggable="false"` temporarily
+  - Added mousedown event listener with `stopPropagation()` to prevent drag interference
+  - Draggable automatically restored via `renderPins()` called by save/cancel handlers
   - Added `enterEditMode(wrapper)` function to handle edit state
   - Modified `renderPins()` to distinguish between pin types using `selectedText` field
   - Created wrapper elements (`.pin-comment-wrapper`, `.pin-text-wrapper`) for editable fields
@@ -162,6 +185,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fallback initialization if main init fails
 
 ### Fixed
+- **Auto-collapse after keyboard shortcut pin creation** - Sidebar now auto-collapses after creating pins via keyboard shortcut with no text selected
+  - When sidebar is collapsed and user creates a pin via keyboard shortcut (without selecting text), sidebar temporarily expands to show the inline creation form
+  - After saving the pin, sidebar now automatically collapses back after ~2 seconds (matching selection-based pin behavior)
+  - Fixed by tracking auto-expansion state in manual pin creation path and scheduling auto-collapse in `saveInlinePin()`
+  - Provides consistent UX across all pin creation methods
 - **Login Layout Issue** - Sidebar no longer covers the "Log in" button when not logged in
   - New users now default to expanded sidebar after first login to showcase features
   - Sidebar automatically expands for new users who log in for the first time

@@ -178,6 +178,16 @@ Copyright (c) 2025 Prompt Pins Contributors
 
 ## Release Notes
 
+### Version 1.2.1 (January 23, 2026)
+
+**Updates:**
+- **New extension icon** - Modern teal asterisk design with dark background
+- **Help icon update** - Standard ℹ️ info icon replaces `[?]` in sidebar header
+
+**Bug Fixes:**
+- Fixed sidebar auto-collapse after keyboard shortcut pin creation
+- Fixed cursor placement when clicking in inline edit textarea
+
 ### Version 1.2.0 (January 18-19, 2026)
 
 **New Features**
@@ -187,9 +197,11 @@ Copyright (c) 2025 Prompt Pins Contributors
 - Inline editing of pin text and comments
 - Cross-chat pin naming shows source conversation
 - Branded minimize button with Prompt Pins icon
-- Keyboard shortcuts help UI with [?] button
+- Keyboard shortcuts help UI with ⓘ info button (green, shows version)
 
 **Bug Fixes**
+- Firefox inline edit cursor positioning (draggable parent conflict resolved)
+- Auto-collapse after keyboard shortcut pin creation (matches selection-based behavior)
 - Login page sidebar no longer covers login button
 - New users now see expanded sidebar after first login
 - Header now properly aligns with ChatGPT's header
