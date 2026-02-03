@@ -107,8 +107,8 @@ Currently no known issues! If you find any bugs, please [report them](https://gi
 ### Creating a Pin
 ![Context Menu](screenshots/screenshot-context-menu-chrome.png)
 
-### Managing Your Pins
-![Sidebar with Pins](screenshots/screenshot-sidebar-pins-chrome.png)
+### Create Pin Dialog
+![Create Pin Dialog](screenshots/screenshot-create-pin-dialog-chrome.png)
 
 ## Development
 
