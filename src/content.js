@@ -55,7 +55,9 @@ const TIMINGS = {
   PULSE_ANIMATION_DURATION: 2000,      // Duration of toggle button pulse animation (ms)
   LOGIN_CHECK_INTERVAL: 1000,          // How often to check login state (ms)
   HIGHLIGHT_ANIMATION_DURATION: 1500,  // Duration of new pin highlight animation (ms)
-  AUTO_COLLAPSE_DELAY: 2000            // Delay before auto-collapsing sidebar after pin creation (ms)
+  AUTO_COLLAPSE_DELAY: 2000,           // Delay before auto-collapsing sidebar after pin creation (ms)
+  HOVER_ENTER_DELAY: 400,              // Delay before expanding sidebar on hover (ms)
+  HOVER_LEAVE_DELAY: 600               // Delay before collapsing sidebar after hover leave (ms)
 };
 
 const UI_TEXT = {
@@ -80,6 +82,9 @@ let currentHighlightTimeout = null;
 let isAutoExpanded = false; // Track if sidebar was auto-expanded for pin creation
 let autoCollapseTimeout = null; // Track timeout for auto-collapse
 let hasSeenWelcome = false; // Track if user has seen the welcome animation
+let hoverEnterTimeout = null; // Track timeout for hover-enter delay
+let hoverLeaveTimeout = null; // Track timeout for hover-leave delay
+let isHoverExpanded = false; // Track if sidebar is temporarily expanded by hover
 
 // Cached DOM elements
 const cachedElements = {
@@ -320,20 +325,27 @@ async function triggerWelcomeAnimation() {
     // 2. Wait 2.5 seconds
     await new Promise(resolve => setTimeout(resolve, TIMINGS.WELCOME_ANIMATION_DELAY));
 
-    // 3. Collapse the sidebar
+    // 3. Collapse the sidebar and transition to unpinned mode
     sidebar.classList.add('collapsed');
     updateToggleButton(toggle, false);
     sidebarOpen = false;
+    sidebarMode = 'unpinned'; // Set to unpinned mode for hover-to-expand
+    
+    // 4. Setup hover behavior for unpinned mode
+    setupHoverBehavior();
+    
+    // 5. Save the new state
+    await saveSidebarState();
 
-    // 4. Add pulse animation to toggle button
+    // 6. Add pulse animation to toggle button
     toggle.classList.add('toggle-pulse');
 
-    // 5. Remove pulse animation after it completes (2s for both pulses)
+    // 7. Remove pulse animation after it completes (2s for both pulses)
     setTimeout(() => {
       toggle.classList.remove('toggle-pulse');
     }, TIMINGS.PULSE_ANIMATION_DURATION);
 
-    debugLog('Prompt Pins: Welcome animation complete');
+    debugLog('Prompt Pins: Welcome animation complete, sidebar in unpinned mode with hover');
   } catch (error) {
     console.error('Prompt Pins: Welcome animation failed:', error);
     // Animation failure is non-critical, continue normally
@@ -375,6 +387,12 @@ function handleLoginStateChange() {
       debugLog('Prompt Pins: Pin creation in progress, deferring auto-collapse');
       return; // Don't auto-collapse while user is creating a pin
     }
+    
+    // CRITICAL: Don't interfere with temporary hover expansion
+    if (isHoverExpanded) {
+      debugLog('Prompt Pins: Sidebar is hover-expanded, not interfering');
+      return; // Let hover behavior handle the collapse
+    }
 
     // On login page - collapse sidebar if not already collapsed
     // BUT respect if user manually expanded it (manual override)
@@ -389,6 +407,8 @@ function handleLoginStateChange() {
       updateToggleButton(toggle, false);
       sidebarOpen = false; // Update state to match visual
       wasOnLoginPage = true;
+      
+      // Don't setup hover on login page - wait until logged in
     }
   } else {
     // Logged in - restore saved sidebar state or default to expanded for new users
@@ -403,6 +423,7 @@ function handleLoginStateChange() {
           sidebarOpen = true;
           // Restore to pinned mode if they had it open
           sidebarMode = 'pinned';
+          cleanupHoverBehavior(); // No hover in pinned mode
         } else {
           // User's preference was collapsed, keep it that way
           sidebar.classList.add('collapsed');
@@ -410,6 +431,7 @@ function handleLoginStateChange() {
           sidebarOpen = false;
           // They had it collapsed, so they're in unpinned mode
           sidebarMode = 'unpinned';
+          setupHoverBehavior(); // Enable hover in unpinned mode
         }
       } else {
         // New user - default to expanded to show features
@@ -419,6 +441,7 @@ function handleLoginStateChange() {
         sidebarOpen = true;
         // New user starts in first-time mode
         sidebarMode = 'first-time';
+        cleanupHoverBehavior(); // No hover in first-time mode
       }
 
       // Save the restored or default preference
@@ -759,6 +782,9 @@ function createSidebar() {
     sidebar.classList.add('collapsed');
     updateToggleButton(toggleBtn, false);
   }
+  
+  // Setup hover behavior based on current mode
+  setupHoverBehavior();
 
   // Load saved pins
   loadPins();
@@ -773,6 +799,13 @@ function toggleSidebar() {
     debugLog('Prompt Pins: User manually toggled, canceling auto-collapse');
   }
 
+  // If user manually toggles during hover-expand, clear hover timers and state
+  if (isHoverExpanded) {
+    clearHoverTimers();
+    isHoverExpanded = false;
+    debugLog('Prompt Pins: User manually toggled during hover, clearing hover state');
+  }
+
   sidebarOpen = !sidebarOpen;
   const sidebar = cachedElements.sidebar;
   const toggle = cachedElements.toggleBtn;
@@ -783,6 +816,9 @@ function toggleSidebar() {
     
     // Update sidebarMode: expanding sets to 'pinned' (user wants it open)
     sidebarMode = 'pinned';
+    
+    // Clean up hover behavior (no hover in pinned mode)
+    cleanupHoverBehavior();
 
     // If user manually expands on login page, set override flag
     if (isLoginPage()) {
@@ -800,6 +836,9 @@ function toggleSidebar() {
     } else {
       sidebarMode = 'unpinned';
     }
+    
+    // Setup hover behavior (active in unpinned mode)
+    setupHoverBehavior();
 
     // If user manually collapses, clear override flag
     manualOverrideOnLogin = false;
@@ -838,6 +877,165 @@ function autoCollapseSidebar() {
   updateToggleButton(toggle, false);
   isAutoExpanded = false;
   autoCollapseTimeout = null;
+}
+
+// ============================================================================
+// HOVER-TO-EXPAND BEHAVIOR (Unpinned Mode)
+// ============================================================================
+
+/**
+ * Clears all hover-related timers
+ * Called when cleaning up hover behavior or when user manually toggles
+ */
+function clearHoverTimers() {
+  if (hoverEnterTimeout !== null) {
+    clearTimeout(hoverEnterTimeout);
+    hoverEnterTimeout = null;
+  }
+  if (hoverLeaveTimeout !== null) {
+    clearTimeout(hoverLeaveTimeout);
+    hoverLeaveTimeout = null;
+  }
+}
+
+/**
+ * Handles mouse entering the collapsed sidebar
+ * Starts timer to expand after HOVER_ENTER_DELAY
+ */
+function handleSidebarHoverEnter() {
+  // Only apply hover behavior in unpinned mode
+  if (sidebarMode !== 'unpinned') return;
+  
+  // Cancel any pending leave timer
+  if (hoverLeaveTimeout !== null) {
+    clearTimeout(hoverLeaveTimeout);
+    hoverLeaveTimeout = null;
+  }
+  
+  // Start enter timer (if not already expanded)
+  if (!isHoverExpanded && hoverEnterTimeout === null) {
+    debugLog('Prompt Pins: Hover enter - starting expansion timer');
+    hoverEnterTimeout = setTimeout(() => {
+      hoverEnterTimeout = null;
+      expandSidebarOnHover();
+    }, TIMINGS.HOVER_ENTER_DELAY);
+  }
+}
+
+/**
+ * Handles mouse leaving the sidebar area
+ * Starts timer to collapse after HOVER_LEAVE_DELAY
+ */
+function handleSidebarHoverLeave() {
+  // Only apply hover behavior in unpinned mode
+  if (sidebarMode !== 'unpinned') return;
+  
+  // Cancel any pending enter timer
+  if (hoverEnterTimeout !== null) {
+    clearTimeout(hoverEnterTimeout);
+    hoverEnterTimeout = null;
+  }
+  
+  // Start leave timer (if currently hover-expanded)
+  if (isHoverExpanded && hoverLeaveTimeout === null) {
+    debugLog('Prompt Pins: Hover leave - starting collapse timer');
+    hoverLeaveTimeout = setTimeout(() => {
+      hoverLeaveTimeout = null;
+      collapseSidebarOnHover();
+    }, TIMINGS.HOVER_LEAVE_DELAY);
+  }
+}
+
+/**
+ * Temporarily expands the sidebar on hover
+ * Does NOT change sidebarMode or persist state to storage
+ */
+function expandSidebarOnHover() {
+  const sidebar = cachedElements.sidebar;
+  const toggle = cachedElements.toggleBtn;
+  
+  if (!sidebar || !toggle) return;
+  
+  debugLog('Prompt Pins: Expanding sidebar on hover (temporary)');
+  
+  // Visually expand the sidebar
+  sidebar.classList.remove('collapsed');
+  updateToggleButton(toggle, true);
+  isHoverExpanded = true;
+  
+  // Clear any leave timer that might have been set during expansion
+  // This prevents the sidebar from collapsing immediately when the expand
+  // causes a mouseleave event due to the DOM transformation
+  if (hoverLeaveTimeout !== null) {
+    clearTimeout(hoverLeaveTimeout);
+    hoverLeaveTimeout = null;
+  }
+}
+
+/**
+ * Collapses the sidebar back after hover
+ * Only if sidebar wasn't manually toggled during hover
+ */
+function collapseSidebarOnHover() {
+  const sidebar = cachedElements.sidebar;
+  const toggle = cachedElements.toggleBtn;
+  
+  if (!sidebar || !toggle) return;
+  
+  // Check if mode changed during hover (user manually toggled)
+  if (sidebarMode !== 'unpinned') {
+    debugLog('Prompt Pins: Sidebar mode changed during hover, skipping auto-collapse');
+    isHoverExpanded = false;
+    return;
+  }
+  
+  debugLog('Prompt Pins: Collapsing sidebar after hover (temporary)');
+  
+  // Visually collapse the sidebar
+  sidebar.classList.add('collapsed');
+  updateToggleButton(toggle, false);
+  isHoverExpanded = false;
+}
+
+/**
+ * Attaches hover event listeners to the sidebar
+ * Only active when sidebarMode === 'unpinned'
+ */
+function setupHoverBehavior() {
+  const sidebar = cachedElements.sidebar;
+  if (!sidebar) return;
+  
+  // Remove any existing listeners first (prevent duplicates)
+  sidebar.removeEventListener('mouseenter', handleSidebarHoverEnter);
+  sidebar.removeEventListener('mouseleave', handleSidebarHoverLeave);
+  
+  // Only attach listeners in unpinned mode
+  if (sidebarMode === 'unpinned') {
+    debugLog('Prompt Pins: Setting up hover behavior (unpinned mode)');
+    sidebar.addEventListener('mouseenter', handleSidebarHoverEnter);
+    sidebar.addEventListener('mouseleave', handleSidebarHoverLeave);
+  }
+}
+
+/**
+ * Removes hover event listeners from the sidebar
+ * Called when changing modes or cleaning up
+ */
+function cleanupHoverBehavior() {
+  const sidebar = cachedElements.sidebar;
+  if (!sidebar) return;
+  
+  debugLog('Prompt Pins: Cleaning up hover behavior');
+  
+  // Clear any pending timers
+  clearHoverTimers();
+  
+  // Remove event listeners
+  sidebar.removeEventListener('mouseenter', handleSidebarHoverEnter);
+  sidebar.removeEventListener('mouseleave', handleSidebarHoverLeave);
+  
+  // Reset hover state
+  isHoverExpanded = false;
 }
 
 
@@ -2306,6 +2504,9 @@ async function initializeSidebar() {
 
       // Load and render pins
       await loadPins();
+      
+      // Setup hover behavior based on current mode
+      setupHoverBehavior();
     } else {
       // Create new sidebar
       createSidebar();
