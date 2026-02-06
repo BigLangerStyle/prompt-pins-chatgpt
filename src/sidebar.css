@@ -69,7 +69,7 @@
 
 /* Hide corner toggle button when collapsed */
 #prompt-pins-sidebar.collapsed .corner-toggle-btn {
-  display: none;
+  display: none !important;
 }
 
 /* Collapsed rail buttons - only visible when sidebar is collapsed */
@@ -105,14 +105,35 @@
   height: 20px;
 }
 
-/* Show collapsed rail buttons when sidebar is collapsed */
-#prompt-pins-sidebar.collapsed .collapsed-rail-btn {
+/* Collapsed rail icon (teal asterisk at top) */
+.collapsed-rail-icon {
+  display: none; /* Hidden when expanded */
+  position: absolute;
+  top: 12px;
+  left: 10px;
+  width: 20px;
+  height: 20px;
+  filter: none !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+.collapsed-rail-icon svg {
+  display: block;
+  width: 20px;
+  height: 20px;
+  filter: none !important;
+}
+
+/* Show collapsed rail elements when sidebar is collapsed */
+#prompt-pins-sidebar.collapsed .collapsed-rail-btn,
+#prompt-pins-sidebar.collapsed .collapsed-rail-icon {
   display: flex;
 }
 
-/* Position create pin button at top of collapsed rail */
-#prompt-pins-sidebar.collapsed #create-pin-collapsed-btn {
-  top: 12px;
+/* Position expand chevron button at bottom of collapsed rail */
+#prompt-pins-sidebar.collapsed #expand-chevron-btn {
+  bottom: 12px;
 }
 
 /* Position toggle button at bottom of collapsed rail */
@@ -159,8 +180,9 @@
 }
 
 .pin-icon {
-  color: #10a37f;
+  color: #10a37f !important;
   flex-shrink: 0;
+  opacity: 1;
 }
 
 .pins-header h3 {
