@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.3.0] - 2026-02-05
 
+### Added
+- **Three-state sidebar mode system** - Foundation for hover-to-expand behavior (Phase 1: Storage layer)
+  - Replaced boolean `sidebarOpen` with three-state `sidebarMode`: 'first-time', 'unpinned', 'pinned'
+  - 'first-time': Initial state for new users, fully expanded
+  - 'unpinned': Auto-minimizes, hover-to-expand (default after first minimize)
+  - 'pinned': Stays expanded, hover disabled (user explicitly locked it open)
+  - Automatic migration from v1.2.1 boolean storage to new mode system
+  - Mode transitions: first minimize → 'unpinned', manual expand → 'pinned'
+  - UI changes for hover behavior coming in Phase 2
+
 ### Fixed
 - **Pin ordering bug** - "Next Pin →" now correctly prioritizes current-chat pins
   - Changed `pins.push()` to `pins.unshift()` for new pin creation
