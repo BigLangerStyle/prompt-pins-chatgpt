@@ -1,3 +1,16 @@
+/* Prompt Pins Sidebar - Simplified Layout
+ * 
+ * Expanded state (320px):
+ * - Full-width panel with content
+ * - Toggle button in bottom-left corner
+ * 
+ * Collapsed state (40px):
+ * - Thin vertical strip visible
+ * - Two icon buttons stacked vertically:
+ *   - Create Pin button (top, disabled for Phase 3)
+ *   - Toggle button (bottom)
+ */
+
 #prompt-pins-sidebar {
   position: fixed;
   right: 0;
@@ -14,34 +27,103 @@
   transition: transform 0.3s ease;
 }
 
+/* Collapsed state - slide sidebar to show only 40px strip */
 #prompt-pins-sidebar.collapsed {
   transform: translateX(calc(100% - 40px));
 }
 
-#prompt-pins-sidebar.collapsed .pins-list,
-#prompt-pins-sidebar.collapsed .next-pin-btn,
-#prompt-pins-sidebar.collapsed .pins-header-title,
-#prompt-pins-sidebar.collapsed #clear-all-pins,
-#prompt-pins-sidebar.collapsed #keyboard-shortcuts-help {
+/* Toggle button - positioned in bottom-left corner when expanded */
+.corner-toggle-btn {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #9ca3af;
+  padding: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  z-index: 10;
+}
+
+.corner-toggle-btn:hover {
+  background: #3e3e3e;
+  color: #ececec;
+}
+
+.corner-toggle-btn svg {
+  display: block;
+  width: 20px;
+  height: 20px;
+}
+
+/* Hide corner toggle button when collapsed */
+#prompt-pins-sidebar.collapsed .corner-toggle-btn {
   display: none;
 }
 
-#prompt-pins-sidebar.collapsed .pins-header {
-  justify-content: center;
-  width: 40px;
-  padding: 16px 0;
+/* Collapsed rail buttons - only visible when sidebar is collapsed */
+.collapsed-rail-btn {
+  display: none; /* Hidden when expanded */
+  background: none;
   border: none;
-}
-
-#prompt-pins-sidebar.collapsed .header-buttons {
-  margin: 0;
+  cursor: pointer;
+  color: #9ca3af;
   padding: 0;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  position: absolute;
+  left: 6px;
 }
 
-#prompt-pins-sidebar.collapsed #toggle-pins {
-  display: flex;
-  margin: 0 auto;
+.collapsed-rail-btn:hover:not(:disabled) {
+  background: #3e3e3e;
+  color: #ececec;
 }
+
+.collapsed-rail-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.collapsed-rail-btn svg {
+  display: block;
+  width: 20px;
+  height: 20px;
+}
+
+/* Show collapsed rail buttons when sidebar is collapsed */
+#prompt-pins-sidebar.collapsed .collapsed-rail-btn {
+  display: flex;
+}
+
+/* Position create pin button at top of collapsed rail */
+#prompt-pins-sidebar.collapsed #create-pin-collapsed-btn {
+  top: 12px;
+}
+
+/* Position toggle button at bottom of collapsed rail */
+#prompt-pins-sidebar.collapsed #toggle-pins {
+  bottom: 12px;
+  left: 6px;
+  display: flex;
+}
+
+/* Hide main content when collapsed */
+#prompt-pins-sidebar.collapsed .pins-header,
+#prompt-pins-sidebar.collapsed .next-pin-btn,
+#prompt-pins-sidebar.collapsed .pins-list {
+  display: none;
+}
+
 
 .pins-header {
   display: flex;
@@ -74,31 +156,6 @@
   font-size: 16px;
   font-weight: 600;
   color: #ececec;
-}
-
-#toggle-pins {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #9ca3af;
-  padding: 0;
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  flex-shrink: 0;
-}
-
-#toggle-pins:hover {
-  background: #3e3e3e;
-}
-
-#toggle-pins svg {
-  display: block;
-  width: 24px;
-  height: 24px;
 }
 
 #clear-all-pins {
