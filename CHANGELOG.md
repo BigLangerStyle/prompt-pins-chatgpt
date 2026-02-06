@@ -50,14 +50,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - First-time mode: First minimize transitions to unpinned as before
   - State persists across page refreshes and sessions
   - Hover behavior only active when sidebar is in unpinned mode
+- **Create Pin button functionality** - Left rail icon now fully functional (Phase 4)
+  - Teal brand icon at top of collapsed rail is now clickable
+  - Smart text detection: Checks for highlighted text when clicked
+  - **With text selected**: Temporarily expands sidebar, shows quote preview form with optional note field
+  - **Without text selected**: Temporarily expands sidebar, shows blank form for manual entry
+  - Auto-collapse behavior after highlight animation completes (~2s delay)
+  - Works in all sidebar states (collapsed, expanded, pinned, unpinned)
+  - Reuses existing `createPin()` logic from keyboard shortcuts (DRY principle)
+  - Tooltip: "Create new pin"
+  - **Hover conflict prevention**: Sidebar won't collapse while user is typing in the form
+  - **Code optimizations**: Added `getNextPinIndex()` helper, O(n²)→O(n) sorting, removed edge cases
 
 ### Fixed
-- **Pin ordering bug** - "Next Pin →" now correctly prioritizes current-chat pins
-  - Changed `pins.push()` to `pins.unshift()` for new pin creation
-  - New pins now appear at the top of the array (index 0) instead of the bottom
-  - Fixes issue where pins from other chats created earlier would always be submitted first
-  - "Next Pin →" button and keyboard shortcuts now reach current-chat pins immediately
-  - Applies to both inline manual creation and context menu creation
+- **Pin ordering** - "Next Pin →" now correctly prioritizes current-chat pins
+  - Button/keyboard shortcut now search for first pin from current chat
+  - Falls back to first pin if no current-chat pins exist
+  - Display order: current-chat pins at top, other-chat pins at bottom
+  - New pins added to array end in chronological order
+  - Fixes issue where other-chat pins would be submitted first
+- **Highlight animation** - Pin highlights now work after sorting changes
+  - Uses data-attribute selector instead of DOM position
+  - Newly created pins always highlight regardless of display position
+- **Auto-collapse timing** - Fixed premature collapse during pin creation
+  - Eliminated race condition between scheduled and immediate collapse
+  - Highlight animation plays for full 1.5s before sidebar collapses
 
 
 ## [1.2.1] - 2026-01-23
