@@ -1250,12 +1250,12 @@ function saveInlinePin(textarea, hideForm) {
     isManuallyCreated: true // Flag for manual creation
   };
 
-  pins.push(newPin);
+  pins.unshift(newPin);
   savePins();
   renderPins();
 
   // Highlight the newly created pin
-  const newPinIndex = pins.length - 1;
+  const newPinIndex = 0;
   highlightNewPin(newPinIndex);
 
   // If sidebar was auto-expanded (keyboard shortcut with no text), schedule auto-collapse
@@ -1809,13 +1809,13 @@ function showCommentInput(selectedText, wasSidebarCollapsed = false) {
       chatTitle: chatTitle
     };
 
-    pins.push(newPin);
+    pins.unshift(newPin);
 
     savePins();
     renderPins();
 
     // Highlight the newly created pin
-    const newPinIndex = pins.length - 1;
+    const newPinIndex = 0;
     highlightNewPin(newPinIndex);
 
     // If sidebar was auto-expanded, schedule auto-collapse after animation
