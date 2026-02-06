@@ -9,6 +9,10 @@
  * - Two icon buttons stacked vertically:
  *   - Create Pin button (top, disabled for Phase 3)
  *   - Toggle button (bottom)
+ * 
+ * Hover behavior (unpinned mode):
+ * - Hover over collapsed sidebar temporarily expands it
+ * - Smooth slide/fade transitions for responsive feel
  */
 
 #prompt-pins-sidebar {
@@ -24,7 +28,8 @@
   display: flex;
   flex-direction: column;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  transition: transform 0.3s ease;
+  /* Smooth transitions for hover-to-expand */
+  transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
 /* Collapsed state - slide sidebar to show only 40px strip */
@@ -122,6 +127,13 @@
 #prompt-pins-sidebar.collapsed .next-pin-btn,
 #prompt-pins-sidebar.collapsed .pins-list {
   display: none;
+}
+
+/* Fade transition for content when expanding/collapsing */
+.pins-header,
+.next-pin-btn,
+.pins-list {
+  transition: opacity 0.2s ease;
 }
 
 

@@ -24,6 +24,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Toggle button (bottom) for expand/collapse
   - Removed permanent rail separator for cleaner appearance
   - Prepares structure for hover behavior implementation
+- **Hover-to-expand behavior** - Sidebar temporarily expands when hovering in unpinned mode (Phase 3)
+  - Hover over collapsed 40px edge expands sidebar after 400ms delay
+  - Moving mouse away collapses sidebar after 600ms delay
+  - Asymmetric timing prevents flicker (fast to open, patient to close)
+  - Only active in unpinned mode (disabled when pinned or first-time)
+  - Smooth slide and fade transitions (~200ms) for responsive feel
+  - Temporary expansion does NOT persist to storage or change mode
+  - Manual toggle during hover cancels all hover timers
+  - Rapid hover events properly debounced with timer cleanup
+  - Login state watcher respects hover expansion and doesn't interfere
+  - Welcome animation properly sets unpinned mode and activates hover
+  - Similar to Firefox's sidebar behavior but tuned for extension use
 
 ### Fixed
 - **Pin ordering bug** - "Next Pin →" now correctly prioritizes current-chat pins
