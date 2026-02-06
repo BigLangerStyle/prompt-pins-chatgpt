@@ -73,6 +73,7 @@ const UI_TEXT = {
 
 let pins = [];
 let sidebarOpen = true; // Default to open, will be overridden by saved state
+let sidebarMode = 'first-time'; // Three-state mode: 'first-time', 'unpinned', 'pinned'
 let queuedPinIndex = null;
 let isWatchingForSubmit = false;
 let currentHighlightTimeout = null;
@@ -400,11 +401,15 @@ function handleLoginStateChange() {
           sidebar.classList.remove('collapsed');
           updateToggleButton(toggle, true);
           sidebarOpen = true;
+          // Restore to pinned mode if they had it open
+          sidebarMode = 'pinned';
         } else {
           // User's preference was collapsed, keep it that way
           sidebar.classList.add('collapsed');
           updateToggleButton(toggle, false);
           sidebarOpen = false;
+          // They had it collapsed, so they're in unpinned mode
+          sidebarMode = 'unpinned';
         }
       } else {
         // New user - default to expanded to show features
@@ -412,6 +417,8 @@ function handleLoginStateChange() {
         sidebar.classList.remove('collapsed');
         updateToggleButton(toggle, true);
         sidebarOpen = true;
+        // New user starts in first-time mode
+        sidebarMode = 'first-time';
       }
 
       // Save the restored or default preference
@@ -758,6 +765,9 @@ function toggleSidebar() {
   if (sidebarOpen) {
     sidebar.classList.remove('collapsed');
     updateToggleButton(toggle, true);
+    
+    // Update sidebarMode: expanding sets to 'pinned' (user wants it open)
+    sidebarMode = 'pinned';
 
     // If user manually expands on login page, set override flag
     if (isLoginPage()) {
@@ -767,6 +777,14 @@ function toggleSidebar() {
   } else {
     sidebar.classList.add('collapsed');
     updateToggleButton(toggle, false);
+    
+    // Update sidebarMode: first minimize transitions to 'unpinned'
+    if (sidebarMode === 'first-time') {
+      sidebarMode = 'unpinned';
+      debugLog('Prompt Pins: First minimize, transitioning to unpinned mode');
+    } else {
+      sidebarMode = 'unpinned';
+    }
 
     // If user manually collapses, clear override flag
     manualOverrideOnLogin = false;
@@ -843,14 +861,35 @@ async function savePins() {
 // Load sidebar state from storage
 async function loadSidebarState() {
   try {
-    const result = await browser.storage.local.get(['sidebarOpen', 'hasSeenWelcome']);
-    // If no saved state exists, default to true (open)
-    sidebarOpen = result.sidebarOpen !== undefined ? result.sidebarOpen : true;
+    const result = await browser.storage.local.get(['sidebarMode', 'sidebarOpen', 'hasSeenWelcome']);
+    
+    // Migration: If sidebarMode doesn't exist but sidebarOpen does (upgrading from v1.2.1)
+    if (result.sidebarMode === undefined && result.sidebarOpen !== undefined) {
+      // Map old boolean to new mode
+      sidebarMode = result.sidebarOpen ? 'first-time' : 'unpinned';
+      debugLog('Migrating from v1.2.1: sidebarOpen=' + result.sidebarOpen + ' → sidebarMode=' + sidebarMode);
+      
+      // Save migrated state and clean up old key
+      await browser.storage.local.set({ sidebarMode });
+      await browser.storage.local.remove('sidebarOpen');
+    } else if (result.sidebarMode !== undefined) {
+      // Use saved mode
+      sidebarMode = result.sidebarMode;
+    } else {
+      // New install - default to first-time
+      sidebarMode = 'first-time';
+    }
+    
+    // Set sidebarOpen for UI compatibility (will be phased out later)
+    // 'first-time' and 'pinned' both show sidebar expanded
+    sidebarOpen = (sidebarMode === 'first-time' || sidebarMode === 'pinned');
+    
     // Check if user has seen the welcome animation
     hasSeenWelcome = result.hasSeenWelcome !== undefined ? result.hasSeenWelcome : false;
   } catch (error) {
     console.error('Prompt Pins: Failed to load sidebar state from storage:', error);
     // Use defaults
+    sidebarMode = 'first-time';
     sidebarOpen = true;
     hasSeenWelcome = false;
   }
@@ -859,7 +898,7 @@ async function loadSidebarState() {
 // Save sidebar state to storage
 async function saveSidebarState() {
   try {
-    await browser.storage.local.set({ sidebarOpen });
+    await browser.storage.local.set({ sidebarMode });
   } catch (error) {
     console.error('Prompt Pins: Failed to save sidebar state to storage:', error);
   }
