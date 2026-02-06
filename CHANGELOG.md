@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.3.0] - 2026-02-05
+
+### Fixed
+- **Pin ordering bug** - "Next Pin →" now correctly prioritizes current-chat pins
+  - Changed `pins.push()` to `pins.unshift()` for new pin creation
+  - New pins now appear at the top of the array (index 0) instead of the bottom
+  - Fixes issue where pins from other chats created earlier would always be submitted first
+  - "Next Pin →" button and keyboard shortcuts now reach current-chat pins immediately
+  - Applies to both inline manual creation and context menu creation
+
+
 ## [1.2.1] - 2026-01-23
 
 ### Changed
