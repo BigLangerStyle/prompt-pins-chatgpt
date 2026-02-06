@@ -17,6 +17,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Automatic migration from v1.2.1 boolean storage to new mode system
   - Mode transitions: first minimize → 'unpinned', manual expand → 'pinned'
   - UI changes for hover behavior coming in Phase 2
+- **Simplified sidebar layout** - Clean foundation for hover-to-expand UI (Phase 2: Layout structure)
+  - Expanded state: Full 320px panel with toggle button in bottom-left corner
+  - Collapsed state: 40px vertical strip with two stacked icon buttons
+  - Create Pin button placeholder (top, disabled - for Phase 3)
+  - Toggle button (bottom) for expand/collapse
+  - Removed permanent rail separator for cleaner appearance
+  - Prepares structure for hover behavior implementation
 
 ### Fixed
 - **Pin ordering bug** - "Next Pin →" now correctly prioritizes current-chat pins

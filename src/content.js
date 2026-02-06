@@ -694,13 +694,8 @@ function createSidebar() {
   clearAllBtn.title = 'Clear all pins';
   clearAllBtn.textContent = 'Clear';
 
-  const toggleBtn = document.createElement('button');
-  toggleBtn.id = 'toggle-pins';
-  updateToggleButton(toggleBtn, true); // Start in expanded state
-
   headerButtons.appendChild(helpBtn);
   headerButtons.appendChild(clearAllBtn);
-  headerButtons.appendChild(toggleBtn);
   header.appendChild(headerTitle);
   header.appendChild(headerButtons);
 
@@ -716,10 +711,30 @@ function createSidebar() {
   pinsList.id = 'pins-list';
   pinsList.className = 'pins-list';
 
+  // Create toggle button (positioned in bottom-left corner when expanded)
+  const toggleBtn = document.createElement('button');
+  toggleBtn.id = 'toggle-pins';
+  toggleBtn.className = 'corner-toggle-btn';
+  updateToggleButton(toggleBtn, true); // Start in expanded state
+
+  // Create placeholder "Create Pin" button for collapsed state (disabled for now)
+  const createPinBtn = document.createElement('button');
+  createPinBtn.id = 'create-pin-collapsed-btn';
+  createPinBtn.className = 'collapsed-rail-btn';
+  createPinBtn.title = 'Create Pin (coming soon)';
+  createPinBtn.disabled = true;
+  createPinBtn.innerHTML = `
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M12 2v20M16 6l-4 4-4-4M16 18l-4-4-4 4"/>
+    </svg>
+  `;
+
   // Assemble sidebar
   sidebar.appendChild(header);
   sidebar.appendChild(nextBtn);
   sidebar.appendChild(pinsList);
+  sidebar.appendChild(toggleBtn);
+  sidebar.appendChild(createPinBtn);
 
   document.body.appendChild(sidebar);
 
