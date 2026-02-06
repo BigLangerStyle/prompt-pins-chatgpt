@@ -36,6 +36,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Login state watcher respects hover expansion and doesn't interfere
   - Welcome animation properly sets unpinned mode and activates hover
   - Similar to Firefox's sidebar behavior but tuned for extension use
+- **Pin/Unpin toggle logic** - Toggle button now controls sidebar persistence (Phase 5)
+  - Implements Windows taskbar auto-hide pattern
+  - Collapsed (unpinned): Toggle button hidden, brand icon and expand chevrons visible
+  - Hover-expanded (unpinned): Shows 🔒 teal lock icon → "Pin sidebar open"
+  - Pinned (locked open): Shows ─ gray minimize line → "Minimize sidebar"
+  - **Collapsed rail branding**: Teal brand icon at top, double chevrons at bottom
+  - Lock icon uses brand teal color (#10a37f) to stand out as primary action
+  - Button only visible when sidebar is expanded (hover or pinned)
+  - Click lock during hover → locks sidebar open permanently
+  - Click chevrons or minimize → unpins and collapses, re-enables hover
+  - Chevrons also clickable to expand immediately
+  - First-time mode: First minimize transitions to unpinned as before
+  - State persists across page refreshes and sessions
+  - Hover behavior only active when sidebar is in unpinned mode
 
 ### Fixed
 - **Pin ordering bug** - "Next Pin →" now correctly prioritizes current-chat pins

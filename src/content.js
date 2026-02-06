@@ -588,26 +588,59 @@ function createSVGIcon(className) {
 
 // Update toggle button icon and tooltip based on sidebar state
 function updateToggleButton(toggleBtn, isOpen) {
+  // Windows taskbar pattern:
+  // - Collapsed + unpinned: Button hidden (CSS handles this via .collapsed class)
+  // - Expanded + unpinned (hover): Show teal lock icon
+  // - Expanded + pinned: Show gray minimize icon
+  
   toggleBtn.innerHTML = '';
 
-  if (isOpen) {
-    toggleBtn.title = 'Minimize Prompt Pins';
-    const icon = createSVGIcon('toggle-icon-minus');
+  if (sidebarMode === 'pinned') {
+    // Pinned mode: show minimize icon (gray)
+    toggleBtn.title = 'Minimize sidebar';
+    const icon = createSVGIcon('toggle-icon-minimize');
     const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
     line.setAttribute('x1', '5');
     line.setAttribute('y1', '12');
     line.setAttribute('x2', '19');
     line.setAttribute('y2', '12');
+    line.setAttribute('stroke', 'currentColor');
+    line.setAttribute('stroke-width', '2');
+    line.setAttribute('stroke-linecap', 'round');
     icon.appendChild(line);
     toggleBtn.appendChild(icon);
   } else {
-    toggleBtn.title = 'Expand Prompt Pins';
-    const icon = createSVGIcon('toggle-icon-pin');
-    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.setAttribute('d', 'M12 2v20M16 6l-4 4-4-4M16 18l-4-4-4 4');
-    icon.appendChild(path);
+    // Unpinned mode (including first-time): show lock icon in teal
+    // This appears during hover expansion, indicating "click to lock this open"
+    toggleBtn.title = 'Pin sidebar open';
+    const icon = createSVGIcon('toggle-icon-lock');
+    
+    // Lock icon: rounded rectangle (body) + arc (shackle) in teal
+    const body = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    body.setAttribute('x', '7');
+    body.setAttribute('y', '11');
+    body.setAttribute('width', '10');
+    body.setAttribute('height', '8');
+    body.setAttribute('rx', '1');
+    body.setAttribute('stroke', '#10a37f'); // Teal color
+    body.setAttribute('stroke-width', '2');
+    body.setAttribute('fill', 'none');
+    icon.appendChild(body);
+    
+    // Shackle (top arc)
+    const shackle = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    shackle.setAttribute('d', 'M9 11V8a3 3 0 0 1 6 0v3');
+    shackle.setAttribute('stroke', '#10a37f'); // Teal color
+    shackle.setAttribute('stroke-width', '2');
+    shackle.setAttribute('fill', 'none');
+    shackle.setAttribute('stroke-linecap', 'round');
+    icon.appendChild(shackle);
+    
     toggleBtn.appendChild(icon);
   }
+  
+  // Note: CSS already handles hiding .corner-toggle-btn when .collapsed class is present
+  // So when collapsed + unpinned, the button is automatically hidden by CSS
 }
 
 // Create keyboard shortcuts help button with tooltip
@@ -740,15 +773,25 @@ function createSidebar() {
   toggleBtn.className = 'corner-toggle-btn';
   updateToggleButton(toggleBtn, true); // Start in expanded state
 
-  // Create placeholder "Create Pin" button for collapsed state (disabled for now)
-  const createPinBtn = document.createElement('button');
-  createPinBtn.id = 'create-pin-collapsed-btn';
-  createPinBtn.className = 'collapsed-rail-btn';
-  createPinBtn.title = 'Create Pin (coming soon)';
-  createPinBtn.disabled = true;
-  createPinBtn.innerHTML = `
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+  // Create teal icon for collapsed rail (top) - always visible when collapsed
+  const collapsedIcon = document.createElement('div');
+  collapsedIcon.id = 'collapsed-rail-icon';
+  collapsedIcon.className = 'collapsed-rail-icon';
+  collapsedIcon.innerHTML = `
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10a37f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M12 2v20M16 6l-4 4-4-4M16 18l-4-4-4 4"/>
+    </svg>
+  `;
+
+  // Create chevron expand button for collapsed rail (bottom) - indicates expansion
+  const expandChevronBtn = document.createElement('button');
+  expandChevronBtn.id = 'expand-chevron-btn';
+  expandChevronBtn.className = 'collapsed-rail-btn';
+  expandChevronBtn.title = 'Expand sidebar (hover or click)';
+  expandChevronBtn.innerHTML = `
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M12 18l-6-6 6-6"/>
+      <path d="M18 18l-6-6 6-6"/>
     </svg>
   `;
 
@@ -757,7 +800,9 @@ function createSidebar() {
   sidebar.appendChild(nextBtn);
   sidebar.appendChild(pinsList);
   sidebar.appendChild(toggleBtn);
-  sidebar.appendChild(createPinBtn);
+  sidebar.appendChild(collapsedIcon); // Teal icon at top
+  sidebar.appendChild(expandChevronBtn); // Chevrons at bottom
+  // Note: Removed create-pin-collapsed-btn - replaced by collapsedIcon + Phase 4 will add functionality
 
   document.body.appendChild(sidebar);
 
@@ -770,6 +815,7 @@ function createSidebar() {
 
   // Attach event listeners
   toggleBtn.addEventListener('click', toggleSidebar);
+  expandChevronBtn.addEventListener('click', toggleSidebar); // Expand button triggers same toggle
   clearAllBtn.addEventListener('click', confirmClearAll);
   nextBtn.addEventListener('click', () => {
     if (pins.length > 0) {
@@ -806,40 +852,41 @@ function toggleSidebar() {
     debugLog('Prompt Pins: User manually toggled during hover, clearing hover state');
   }
 
-  sidebarOpen = !sidebarOpen;
   const sidebar = cachedElements.sidebar;
   const toggle = cachedElements.toggleBtn;
 
-  if (sidebarOpen) {
+  // Determine action based on current mode
+  if (sidebarMode === 'first-time') {
+    // First minimize: transition to unpinned mode
+    sidebarOpen = false;
+    sidebar.classList.add('collapsed');
+    sidebarMode = 'unpinned'; // Update mode BEFORE updateToggleButton
+    updateToggleButton(toggle, false);
+    setupHoverBehavior();
+    debugLog('Prompt Pins: First minimize, transitioning to unpinned mode');
+  } else if (sidebarMode === 'unpinned') {
+    // Unpinned → Pinned: Expand and pin open
+    sidebarOpen = true;
     sidebar.classList.remove('collapsed');
+    sidebarMode = 'pinned'; // Update mode BEFORE updateToggleButton
     updateToggleButton(toggle, true);
+    cleanupHoverBehavior(); // Disable hover in pinned mode
+    debugLog('Prompt Pins: Unpinned → Pinned (sidebar locked open, hover disabled)');
     
-    // Update sidebarMode: expanding sets to 'pinned' (user wants it open)
-    sidebarMode = 'pinned';
-    
-    // Clean up hover behavior (no hover in pinned mode)
-    cleanupHoverBehavior();
-
     // If user manually expands on login page, set override flag
     if (isLoginPage()) {
       manualOverrideOnLogin = true;
       debugLog('Prompt Pins: User manually expanded sidebar on login page');
     }
-  } else {
+  } else if (sidebarMode === 'pinned') {
+    // Pinned → Unpinned: Collapse and enable hover
+    sidebarOpen = false;
     sidebar.classList.add('collapsed');
+    sidebarMode = 'unpinned'; // Update mode BEFORE updateToggleButton
     updateToggleButton(toggle, false);
+    setupHoverBehavior(); // Re-enable hover in unpinned mode
+    debugLog('Prompt Pins: Pinned → Unpinned (sidebar minimized, hover enabled)');
     
-    // Update sidebarMode: first minimize transitions to 'unpinned'
-    if (sidebarMode === 'first-time') {
-      sidebarMode = 'unpinned';
-      debugLog('Prompt Pins: First minimize, transitioning to unpinned mode');
-    } else {
-      sidebarMode = 'unpinned';
-    }
-    
-    // Setup hover behavior (active in unpinned mode)
-    setupHoverBehavior();
-
     // If user manually collapses, clear override flag
     manualOverrideOnLogin = false;
   }
