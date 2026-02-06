@@ -2307,6 +2307,65 @@ function usePin(index, shouldDelete = false) {
     return; // Silently ignore - button should already be disabled
   }
 
+  // Check if this is a cross-chat pin (from a different conversation)
+  const currentChatId = getCurrentChatId();
+  const isCrossChat = pin.chatId && pin.chatId !== currentChatId;
+
+  if (DEBUG) {
+    console.log('usePin() cross-chat check:', {
+      index,
+      pinChatId: pin.chatId,
+      currentChatId: currentChatId,
+      isCrossChat: isCrossChat
+    });
+  }
+
+  // If cross-chat pin, check if warning has been dismissed
+  if (isCrossChat) {
+    browser.storage.local.get(['crossChatWarningDismissed'])
+      .then(result => {
+        const warningDismissed = result.crossChatWarningDismissed || false;
+
+        if (DEBUG) {
+          console.log('Cross-chat warning dismissal status:', warningDismissed);
+        }
+
+        if (!warningDismissed) {
+          // Show warning banner and wait for user decision
+          showCrossChatWarning(index, shouldDelete);
+        } else {
+          // Warning dismissed - proceed normally
+          proceedWithPinUse(index, shouldDelete);
+        }
+      })
+      .catch(error => {
+        console.error('Error checking cross-chat warning preference:', error);
+        // On error, default to showing warning (safer)
+        showCrossChatWarning(index, shouldDelete);
+      });
+    return; // Exit early - will resume after user responds to warning
+  }
+
+  // Same-chat pin - proceed normally
+  proceedWithPinUse(index, shouldDelete);
+}
+
+/**
+ * Proceeds with using a pin (called after cross-chat warning check)
+ * Separated from usePin() to allow for async warning flow
+ *
+ * @param {number} index - Pin array index
+ * @param {boolean} shouldDelete - Whether to delete pin after use
+ * @returns {void}
+ */
+function proceedWithPinUse(index, shouldDelete) {
+  if (index < 0 || index >= pins.length) {
+    console.error('Invalid pin index:', index);
+    return;
+  }
+
+  const pin = pins[index];
+
   // Check if ChatGPT is actively generating a response
   const isGenerating = isChatGPTGenerating();
 
@@ -2325,6 +2384,126 @@ function usePin(index, shouldDelete = false) {
       deletePin(index);
     }
   }
+}
+
+/**
+ * Shows a warning banner when user tries to use a pin from a different conversation
+ * Banner appears above the ChatGPT textarea with options to cancel or proceed
+ * Includes a dismissible checkbox to permanently hide future warnings
+ *
+ * @param {number} index - Pin array index
+ * @param {boolean} shouldDelete - Whether to delete pin after use
+ * @returns {void}
+ */
+function showCrossChatWarning(index, shouldDelete) {
+  // Remove any existing warning banner
+  const existingWarning = document.getElementById('cross-chat-warning');
+  if (existingWarning) {
+    existingWarning.remove();
+  }
+
+  // Find the ChatGPT textarea container
+  const textareaContainer = document.querySelector('#prompt-textarea');
+  if (!textareaContainer) {
+    console.error('Could not find textarea container (#prompt-textarea) for warning banner');
+    // Fall back to proceeding without warning
+    proceedWithPinUse(index, shouldDelete);
+    return;
+  }
+
+  // Create warning banner
+  const banner = document.createElement('div');
+  banner.id = 'cross-chat-warning';
+  banner.className = 'cross-chat-warning-banner';
+
+  banner.innerHTML = `
+    <div class="warning-content">
+      <div class="warning-icon">⚠️</div>
+      <div class="warning-text">
+        <strong>Different Conversation</strong>
+        <p>This pin is from another conversation. Context may not match.</p>
+      </div>
+    </div>
+    <div class="warning-checkbox">
+      <label>
+        <input type="checkbox" id="dismiss-warning-checkbox">
+        Don't show this warning again
+      </label>
+    </div>
+    <div class="warning-buttons">
+      <button class="warning-btn-cancel">Cancel</button>
+      <button class="warning-btn-use">Use Anyway</button>
+    </div>
+  `;
+
+  // Insert banner above the textarea - try multiple strategies
+  let inserted = false;
+  
+  // Strategy 1: Insert before textarea's parent (the form or container)
+  const textareaParent = textareaContainer.parentElement;
+  if (textareaParent && textareaParent.parentElement) {
+    textareaParent.parentElement.insertBefore(banner, textareaParent);
+    inserted = true;
+  }
+
+  // Strategy 2: If that didn't work, try finding the form
+  if (!inserted) {
+    const form = textareaContainer.closest('form');
+    if (form && form.parentElement) {
+      form.parentElement.insertBefore(banner, form);
+      inserted = true;
+    }
+  }
+
+  // Strategy 3: Last resort - append to body
+  if (!inserted) {
+    console.warn('Could not find ideal insertion point for warning banner, appending to body');
+    document.body.appendChild(banner);
+    inserted = true;
+  }
+
+  // Get interactive elements
+  const dismissCheckbox = banner.querySelector('#dismiss-warning-checkbox');
+  const cancelBtn = banner.querySelector('.warning-btn-cancel');
+  const useBtn = banner.querySelector('.warning-btn-use');
+
+  if (!dismissCheckbox || !cancelBtn || !useBtn) {
+    console.error('Could not find banner interactive elements');
+    return;
+  }
+
+  // Handle checkbox - save preference immediately when checked
+  dismissCheckbox.addEventListener('change', () => {
+    if (dismissCheckbox.checked) {
+      browser.storage.local.set({ crossChatWarningDismissed: true })
+        .then(() => {
+          if (DEBUG) {
+            console.log('Cross-chat warning dismissed permanently');
+          }
+        })
+        .catch(error => {
+          console.error('Error saving cross-chat warning dismissal:', error);
+        });
+    }
+  });
+
+  // Handle Cancel button
+  cancelBtn.addEventListener('click', () => {
+    banner.remove();
+    // Don't proceed with pin use
+  });
+
+  // Handle Use Anyway button
+  useBtn.addEventListener('click', () => {
+    banner.remove();
+    // Proceed with using the pin
+    proceedWithPinUse(index, shouldDelete);
+  });
+
+  // Scroll banner into view smoothly
+  setTimeout(() => {
+    banner.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, 100);
 }
 
 // Queue a pin for later submission

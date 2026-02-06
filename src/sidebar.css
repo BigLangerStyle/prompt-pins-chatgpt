@@ -460,6 +460,118 @@
   background: #0d8c6a;
 }
 
+/* Cross-chat warning banner */
+.cross-chat-warning-banner {
+  background: #2a2a2a;
+  border: 2px solid #f59e0b; /* Amber/warning color */
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.cross-chat-warning-banner .warning-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.cross-chat-warning-banner .warning-icon {
+  font-size: 24px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.cross-chat-warning-banner .warning-text {
+  flex: 1;
+}
+
+.cross-chat-warning-banner .warning-text strong {
+  display: block;
+  color: #f59e0b;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.cross-chat-warning-banner .warning-text p {
+  color: #d1d5db;
+  font-size: 13px;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.cross-chat-warning-banner .warning-checkbox {
+  margin-bottom: 12px;
+  padding-left: 36px; /* Align with text content */
+}
+
+.cross-chat-warning-banner .warning-checkbox label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #9ca3af;
+  font-size: 13px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.cross-chat-warning-banner .warning-checkbox input[type="checkbox"] {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+.cross-chat-warning-banner .warning-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding-left: 36px; /* Align with text content */
+}
+
+.cross-chat-warning-banner .warning-btn-cancel,
+.cross-chat-warning-banner .warning-btn-use {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: background-color 0.2s;
+}
+
+.cross-chat-warning-banner .warning-btn-cancel {
+  background: #3e3e3e;
+  color: #ececec;
+}
+
+.cross-chat-warning-banner .warning-btn-cancel:hover {
+  background: #4a4a4a;
+}
+
+.cross-chat-warning-banner .warning-btn-use {
+  background: #10a37f;
+  color: white;
+}
+
+.cross-chat-warning-banner .warning-btn-use:hover {
+  background: #0d8c6a;
+}
+
 .next-pin-btn {
   width: calc(100% - 24px);
   margin: 12px;

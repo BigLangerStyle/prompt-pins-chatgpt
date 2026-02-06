@@ -61,6 +61,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Tooltip: "Create new pin"
   - **Hover conflict prevention**: Sidebar won't collapse while user is typing in the form
   - **Code optimizations**: Added `getNextPinIndex()` helper, O(n²)→O(n) sorting, removed edge cases
+- **Cross-chat pin warning** - Alerts user before using pins from different conversations
+  - Detects when pin's chat ID differs from current conversation
+  - Shows warning banner above textarea before submission
+  - Banner message: "This pin is from another conversation. Context may not match."
+  - Non-blocking UI: Inline banner with Cancel and Use Anyway buttons
+  - Dismissible checkbox: "Don't show this warning again" permanently disables warnings
+  - Preference stored in `browser.storage.local` as `crossChatWarningDismissed`
+  - Warning only appears for cross-chat pins (same-chat pins submit immediately)
+  - Smooth slide-in animation for better UX
+  - Warning banner styled consistently with existing dialogs (amber/warning color scheme)
+  - Safety-first: On storage errors, defaults to showing warning rather than skipping it
 
 ### Design Decisions
 - **Phase 6 Migration UX**: Decided against pulse animation for v1.2.1 upgraders
