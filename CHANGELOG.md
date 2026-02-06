@@ -6,6 +6,46 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.3.0] - 2026-02-05
+
+### Added
+- **Three-state sidebar mode system** - Foundation for hover-to-expand behavior (Phase 1: Storage layer)
+  - Replaced boolean `sidebarOpen` with three-state `sidebarMode`: 'first-time', 'unpinned', 'pinned'
+  - 'first-time': Initial state for new users, fully expanded
+  - 'unpinned': Auto-minimizes, hover-to-expand (default after first minimize)
+  - 'pinned': Stays expanded, hover disabled (user explicitly locked it open)
+  - Automatic migration from v1.2.1 boolean storage to new mode system
+  - Mode transitions: first minimize → 'unpinned', manual expand → 'pinned'
+  - UI changes for hover behavior coming in Phase 2
+- **Simplified sidebar layout** - Clean foundation for hover-to-expand UI (Phase 2: Layout structure)
+  - Expanded state: Full 320px panel with toggle button in bottom-left corner
+  - Collapsed state: 40px vertical strip with two stacked icon buttons
+  - Create Pin button placeholder (top, disabled - for Phase 3)
+  - Toggle button (bottom) for expand/collapse
+  - Removed permanent rail separator for cleaner appearance
+  - Prepares structure for hover behavior implementation
+- **Hover-to-expand behavior** - Sidebar temporarily expands when hovering in unpinned mode (Phase 3)
+  - Hover over collapsed 40px edge expands sidebar after 400ms delay
+  - Moving mouse away collapses sidebar after 600ms delay
+  - Asymmetric timing prevents flicker (fast to open, patient to close)
+  - Only active in unpinned mode (disabled when pinned or first-time)
+  - Smooth slide and fade transitions (~200ms) for responsive feel
+  - Temporary expansion does NOT persist to storage or change mode
+  - Manual toggle during hover cancels all hover timers
+  - Rapid hover events properly debounced with timer cleanup
+  - Login state watcher respects hover expansion and doesn't interfere
+  - Welcome animation properly sets unpinned mode and activates hover
+  - Similar to Firefox's sidebar behavior but tuned for extension use
+
+### Fixed
+- **Pin ordering bug** - "Next Pin →" now correctly prioritizes current-chat pins
+  - Changed `pins.push()` to `pins.unshift()` for new pin creation
+  - New pins now appear at the top of the array (index 0) instead of the bottom
+  - Fixes issue where pins from other chats created earlier would always be submitted first
+  - "Next Pin →" button and keyboard shortcuts now reach current-chat pins immediately
+  - Applies to both inline manual creation and context menu creation
+
+
 ## [1.2.1] - 2026-01-23
 
 ### Changed

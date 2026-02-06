@@ -178,6 +178,19 @@ Copyright (c) 2025 Prompt Pins Contributors
 
 ## Release Notes
 
+### Version 1.3.0 (February 5, 2026)
+
+**New Features:**
+- **Three-state sidebar mode system (Phase 1)** - Foundation for upcoming hover-to-expand behavior
+  - Replaced boolean open/closed state with three modes: 'first-time', 'unpinned', 'pinned'
+  - Automatic migration from previous versions maintains user preferences
+  - Prepares for Phase 2: minimized sidebar with hover-to-expand functionality
+
+**Bug Fixes:**
+- Fixed pin ordering bug where "Next Pin →" would prioritize pins from other chats
+  - New pins now appear at top of queue (index 0) instead of bottom
+  - Current-chat pins are always reached first by keyboard shortcuts and Next Pin button
+
 ### Version 1.2.1 (January 23, 2026)
 
 **Updates:**
