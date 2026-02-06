@@ -62,6 +62,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Hover conflict prevention**: Sidebar won't collapse while user is typing in the form
   - **Code optimizations**: Added `getNextPinIndex()` helper, O(n²)→O(n) sorting, removed edge cases
 
+### Design Decisions
+- **Phase 6 Migration UX**: Decided against pulse animation for v1.2.1 upgraders
+  - Rationale: Sidebar being expanded is sufficient signal; users will discover features naturally
+  - Migration still works (v1.2.1 → first-time mode → unpinned after first minimize)
+  - Keeps UX clean and non-intrusive
+
 ### Fixed
 - **Pin ordering** - "Next Pin →" now correctly prioritizes current-chat pins
   - Button/keyboard shortcut now search for first pin from current chat

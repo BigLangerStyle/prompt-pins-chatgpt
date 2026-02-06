@@ -354,6 +354,29 @@ async function triggerWelcomeAnimation() {
 
 
 /**
+ * Triggers pulse animation on minimize button for first-time mode
+ * This helps users upgrading from v1.2.1 discover the new persistence controls
+ * Animation runs once when sidebar is in 'first-time' mode
+ * After user clicks minimize, they transition to 'unpinned' mode
+ */
+function triggerFirstTimePulseAnimation() {
+  const toggle = cachedElements.toggleBtn;
+  if (!toggle) return;
+
+  debugLog('Prompt Pins: Triggering first-time pulse animation on minimize button');
+
+  // Add pulse animation to toggle button
+  toggle.classList.add('toggle-pulse');
+
+  // Remove pulse animation after it completes (2s for both pulses)
+  setTimeout(() => {
+    toggle.classList.remove('toggle-pulse');
+    debugLog('Prompt Pins: First-time pulse animation complete');
+  }, TIMINGS.PULSE_ANIMATION_DURATION);
+}
+
+
+/**
  * Manages automatic sidebar collapse/expand for login page
  * Behavior:
  * - Collapses sidebar when on login page for clean UX
@@ -839,6 +862,11 @@ function createSidebar() {
   // Setup hover behavior based on current mode
   setupHoverBehavior();
 
+  // If in first-time mode (migration from v1.2.1 or new install), add pulse animation
+  if (sidebarMode === 'first-time') {
+    triggerFirstTimePulseAnimation();
+  }
+
   // Load saved pins
   loadPins();
 }
@@ -1155,9 +1183,10 @@ async function loadSidebarState() {
 
     // Migration: If sidebarMode doesn't exist but sidebarOpen does (upgrading from v1.2.1)
     if (result.sidebarMode === undefined && result.sidebarOpen !== undefined) {
-      // Map old boolean to new mode
-      sidebarMode = result.sidebarOpen ? 'first-time' : 'unpinned';
-      debugLog('Migrating from v1.2.1: sidebarOpen=' + result.sidebarOpen + ' → sidebarMode=' + sidebarMode);
+      // All v1.2.1 users get the first-time experience to discover new features
+      // This shows them the pulse animation on the minimize button
+      sidebarMode = 'first-time';
+      debugLog('Migrating from v1.2.1: sidebarOpen=' + result.sidebarOpen + ' → sidebarMode=first-time (showing new feature)');
 
       // Save migrated state and clean up old key
       await browser.storage.local.set({ sidebarMode });
