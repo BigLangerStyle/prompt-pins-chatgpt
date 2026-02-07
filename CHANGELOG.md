@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [1.3.0] - 2026-02-05
+## [1.3.0] - 2026-02-06
 
 ### Added
 - **Three-state sidebar mode system** - Foundation for hover-to-expand behavior (Phase 1: Storage layer)
@@ -39,10 +39,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Pin/Unpin toggle logic** - Toggle button now controls sidebar persistence (Phase 5)
   - Implements Windows taskbar auto-hide pattern
   - Collapsed (unpinned): Toggle button hidden, brand icon and expand chevrons visible
-  - Hover-expanded (unpinned): Shows 🔒 teal lock icon → "Pin sidebar open"
-  - Pinned (locked open): Shows ─ gray minimize line → "Minimize sidebar"
+  - Hover-expanded (unpinned): Shows 🔒 gray lock icon → "Pin sidebar open"
+  - Pinned (locked open): Shows 🔒 teal lock icon → "Minimize sidebar"
   - **Collapsed rail branding**: Teal brand icon at top, double chevrons at bottom
-  - Lock icon uses brand teal color (#10a37f) to stand out as primary action
+  - Teal lock indicates active locked state, gray lock indicates inactive unlocked state
   - Button only visible when sidebar is expanded (hover or pinned)
   - Click lock during hover → locks sidebar open permanently
   - Click chevrons or minimize → unpins and collapses, re-enables hover
@@ -72,6 +72,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Smooth slide-in animation for better UX
   - Warning banner styled consistently with existing dialogs (amber/warning color scheme)
   - Safety-first: On storage errors, defaults to showing warning rather than skipping it
+
+### Changed
+- **Lock icon visibility improvement** - Swapped lock icon colors for better visibility
+  - Pinned (locked open) state now shows teal lock 🔒 - highlights active/engaged state with brand color
+  - Unpinned (unlocked) state now shows gray lock 🔒 - subdued inactive state
+  - Much better visibility than previous gray minimize line (─) character
+  - Consistent lock metaphor: teal = currently locked, gray = available to lock
 
 ### Design Decisions
 - **Phase 6 Migration UX**: Decided against pulse animation for v1.2.1 upgraders
