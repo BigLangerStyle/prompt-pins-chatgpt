@@ -619,23 +619,8 @@ function updateToggleButton(toggleBtn, isOpen) {
   toggleBtn.innerHTML = '';
 
   if (sidebarMode === 'pinned') {
-    // Pinned mode: show minimize icon (gray)
-    toggleBtn.title = 'Minimize sidebar';
-    const icon = createSVGIcon('toggle-icon-minimize');
-    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    line.setAttribute('x1', '5');
-    line.setAttribute('y1', '12');
-    line.setAttribute('x2', '19');
-    line.setAttribute('y2', '12');
-    line.setAttribute('stroke', 'currentColor');
-    line.setAttribute('stroke-width', '2');
-    line.setAttribute('stroke-linecap', 'round');
-    icon.appendChild(line);
-    toggleBtn.appendChild(icon);
-  } else {
-    // Unpinned mode (including first-time): show lock icon in teal
-    // This appears during hover expansion, indicating "click to lock this open"
-    toggleBtn.title = 'Pin sidebar open';
+    // Pinned mode: show lock icon in teal (actively locked state)
+    toggleBtn.title = 'Unpin sidebar';
     const icon = createSVGIcon('toggle-icon-lock');
 
     // Lock icon: rounded rectangle (body) + arc (shackle) in teal
@@ -645,7 +630,7 @@ function updateToggleButton(toggleBtn, isOpen) {
     body.setAttribute('width', '10');
     body.setAttribute('height', '8');
     body.setAttribute('rx', '1');
-    body.setAttribute('stroke', '#10a37f'); // Teal color
+    body.setAttribute('stroke', '#10a37f'); // Teal color - active locked state
     body.setAttribute('stroke-width', '2');
     body.setAttribute('fill', 'none');
     icon.appendChild(body);
@@ -653,7 +638,35 @@ function updateToggleButton(toggleBtn, isOpen) {
     // Shackle (top arc)
     const shackle = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     shackle.setAttribute('d', 'M9 11V8a3 3 0 0 1 6 0v3');
-    shackle.setAttribute('stroke', '#10a37f'); // Teal color
+    shackle.setAttribute('stroke', '#10a37f'); // Teal color - active locked state
+    shackle.setAttribute('stroke-width', '2');
+    shackle.setAttribute('fill', 'none');
+    shackle.setAttribute('stroke-linecap', 'round');
+    icon.appendChild(shackle);
+
+    toggleBtn.appendChild(icon);
+  } else {
+    // Unpinned mode (including first-time): show lock icon in gray (unlocked state)
+    // This appears during hover expansion, indicating "click to lock this open"
+    toggleBtn.title = 'Pin sidebar open';
+    const icon = createSVGIcon('toggle-icon-lock');
+
+    // Lock icon: rounded rectangle (body) + arc (shackle) in gray
+    const body = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    body.setAttribute('x', '7');
+    body.setAttribute('y', '11');
+    body.setAttribute('width', '10');
+    body.setAttribute('height', '8');
+    body.setAttribute('rx', '1');
+    body.setAttribute('stroke', '#8e8ea0'); // Gray color - inactive unlocked state
+    body.setAttribute('stroke-width', '2');
+    body.setAttribute('fill', 'none');
+    icon.appendChild(body);
+
+    // Shackle (top arc)
+    const shackle = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    shackle.setAttribute('d', 'M9 11V8a3 3 0 0 1 6 0v3');
+    shackle.setAttribute('stroke', '#8e8ea0'); // Gray color - inactive unlocked state
     shackle.setAttribute('stroke-width', '2');
     shackle.setAttribute('fill', 'none');
     shackle.setAttribute('stroke-linecap', 'round');
