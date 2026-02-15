@@ -6,6 +6,101 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.3.0] - 2026-02-06
+
+### Added
+- **Three-state sidebar mode system** - Foundation for hover-to-expand behavior (Phase 1: Storage layer)
+  - Replaced boolean `sidebarOpen` with three-state `sidebarMode`: 'first-time', 'unpinned', 'pinned'
+  - 'first-time': Initial state for new users, fully expanded
+  - 'unpinned': Auto-minimizes, hover-to-expand (default after first minimize)
+  - 'pinned': Stays expanded, hover disabled (user explicitly locked it open)
+  - Automatic migration from v1.2.1 boolean storage to new mode system
+  - Mode transitions: first minimize → 'unpinned', manual expand → 'pinned'
+  - UI changes for hover behavior coming in Phase 2
+- **Simplified sidebar layout** - Clean foundation for hover-to-expand UI (Phase 2: Layout structure)
+  - Expanded state: Full 320px panel with toggle button in bottom-left corner
+  - Collapsed state: 40px vertical strip with two stacked icon buttons
+  - Create Pin button placeholder (top, disabled - for Phase 3)
+  - Toggle button (bottom) for expand/collapse
+  - Removed permanent rail separator for cleaner appearance
+  - Prepares structure for hover behavior implementation
+- **Hover-to-expand behavior** - Sidebar temporarily expands when hovering in unpinned mode (Phase 3)
+  - Hover over collapsed 40px edge expands sidebar after 400ms delay
+  - Moving mouse away collapses sidebar after 600ms delay
+  - Asymmetric timing prevents flicker (fast to open, patient to close)
+  - Only active in unpinned mode (disabled when pinned or first-time)
+  - Smooth slide and fade transitions (~200ms) for responsive feel
+  - Temporary expansion does NOT persist to storage or change mode
+  - Manual toggle during hover cancels all hover timers
+  - Rapid hover events properly debounced with timer cleanup
+  - Login state watcher respects hover expansion and doesn't interfere
+  - Welcome animation properly sets unpinned mode and activates hover
+  - Similar to Firefox's sidebar behavior but tuned for extension use
+- **Pin/Unpin toggle logic** - Toggle button now controls sidebar persistence (Phase 5)
+  - Implements Windows taskbar auto-hide pattern
+  - Collapsed (unpinned): Toggle button hidden, brand icon and expand chevrons visible
+  - Hover-expanded (unpinned): Shows 🔒 gray lock icon → "Pin sidebar open"
+  - Pinned (locked open): Shows 🔒 teal lock icon → "Minimize sidebar"
+  - **Collapsed rail branding**: Teal brand icon at top, double chevrons at bottom
+  - Teal lock indicates active locked state, gray lock indicates inactive unlocked state
+  - Button only visible when sidebar is expanded (hover or pinned)
+  - Click lock during hover → locks sidebar open permanently
+  - Click chevrons or minimize → unpins and collapses, re-enables hover
+  - Chevrons also clickable to expand immediately
+  - First-time mode: First minimize transitions to unpinned as before
+  - State persists across page refreshes and sessions
+  - Hover behavior only active when sidebar is in unpinned mode
+- **Create Pin button functionality** - Left rail icon now fully functional (Phase 4)
+  - Teal brand icon at top of collapsed rail is now clickable
+  - Smart text detection: Checks for highlighted text when clicked
+  - **With text selected**: Temporarily expands sidebar, shows quote preview form with optional note field
+  - **Without text selected**: Temporarily expands sidebar, shows blank form for manual entry
+  - Auto-collapse behavior after highlight animation completes (~2s delay)
+  - Works in all sidebar states (collapsed, expanded, pinned, unpinned)
+  - Reuses existing `createPin()` logic from keyboard shortcuts (DRY principle)
+  - Tooltip: "Create new pin"
+  - **Hover conflict prevention**: Sidebar won't collapse while user is typing in the form
+  - **Code optimizations**: Added `getNextPinIndex()` helper, O(n²)→O(n) sorting, removed edge cases
+- **Cross-chat pin warning** - Alerts user before using pins from different conversations
+  - Detects when pin's chat ID differs from current conversation
+  - Shows warning banner above textarea before submission
+  - Banner message: "This pin is from another conversation. Context may not match."
+  - Non-blocking UI: Inline banner with Cancel and Use Anyway buttons
+  - Dismissible checkbox: "Don't show this warning again" permanently disables warnings
+  - Preference stored in `browser.storage.local` as `crossChatWarningDismissed`
+  - Warning only appears for cross-chat pins (same-chat pins submit immediately)
+  - Smooth slide-in animation for better UX
+  - Warning banner styled consistently with existing dialogs (amber/warning color scheme)
+  - Safety-first: On storage errors, defaults to showing warning rather than skipping it
+
+### Changed
+- **Lock icon visibility improvement** - Swapped lock icon colors for better visibility
+  - Pinned (locked open) state now shows teal lock 🔒 - highlights active/engaged state with brand color
+  - Unpinned (unlocked) state now shows gray lock 🔒 - subdued inactive state
+  - Much better visibility than previous gray minimize line (─) character
+  - Consistent lock metaphor: teal = currently locked, gray = available to lock
+
+### Design Decisions
+- **Phase 6 Migration UX**: Decided against pulse animation for v1.2.1 upgraders
+  - Rationale: Sidebar being expanded is sufficient signal; users will discover features naturally
+  - Migration still works (v1.2.1 → first-time mode → unpinned after first minimize)
+  - Keeps UX clean and non-intrusive
+
+### Fixed
+- **Pin ordering** - "Next Pin →" now correctly prioritizes current-chat pins
+  - Button/keyboard shortcut now search for first pin from current chat
+  - Falls back to first pin if no current-chat pins exist
+  - Display order: current-chat pins at top, other-chat pins at bottom
+  - New pins added to array end in chronological order
+  - Fixes issue where other-chat pins would be submitted first
+- **Highlight animation** - Pin highlights now work after sorting changes
+  - Uses data-attribute selector instead of DOM position
+  - Newly created pins always highlight regardless of display position
+- **Auto-collapse timing** - Fixed premature collapse during pin creation
+  - Eliminated race condition between scheduled and immediate collapse
+  - Highlight animation plays for full 1.5s before sidebar collapses
+
+
 ## [1.2.1] - 2026-01-23
 
 ### Changed

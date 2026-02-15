@@ -55,7 +55,9 @@ const TIMINGS = {
   PULSE_ANIMATION_DURATION: 2000,      // Duration of toggle button pulse animation (ms)
   LOGIN_CHECK_INTERVAL: 1000,          // How often to check login state (ms)
   HIGHLIGHT_ANIMATION_DURATION: 1500,  // Duration of new pin highlight animation (ms)
-  AUTO_COLLAPSE_DELAY: 2000            // Delay before auto-collapsing sidebar after pin creation (ms)
+  AUTO_COLLAPSE_DELAY: 2000,           // Delay before auto-collapsing sidebar after pin creation (ms)
+  HOVER_ENTER_DELAY: 400,              // Delay before expanding sidebar on hover (ms)
+  HOVER_LEAVE_DELAY: 600               // Delay before collapsing sidebar after hover leave (ms)
 };
 
 const UI_TEXT = {
@@ -73,12 +75,16 @@ const UI_TEXT = {
 
 let pins = [];
 let sidebarOpen = true; // Default to open, will be overridden by saved state
+let sidebarMode = 'first-time'; // Three-state mode: 'first-time', 'unpinned', 'pinned'
 let queuedPinIndex = null;
 let isWatchingForSubmit = false;
 let currentHighlightTimeout = null;
 let isAutoExpanded = false; // Track if sidebar was auto-expanded for pin creation
 let autoCollapseTimeout = null; // Track timeout for auto-collapse
 let hasSeenWelcome = false; // Track if user has seen the welcome animation
+let hoverEnterTimeout = null; // Track timeout for hover-enter delay
+let hoverLeaveTimeout = null; // Track timeout for hover-leave delay
+let isHoverExpanded = false; // Track if sidebar is temporarily expanded by hover
 
 // Cached DOM elements
 const cachedElements = {
@@ -96,7 +102,7 @@ const cachedElements = {
 /**
  * Gets the ChatGPT input textarea element
  * Tries multiple selectors for reliability
- * 
+ *
  * @returns {HTMLElement|null} Input element or null if not found
  */
 function getChatGPTInput() {
@@ -107,7 +113,7 @@ function getChatGPTInput() {
 /**
  * Gets the ChatGPT send button element
  * Tries multiple selectors for reliability
- * 
+ *
  * @returns {HTMLElement|null} Send button or null if not found
  */
 function getSendButton() {
@@ -140,7 +146,7 @@ function triggerInputEvents(element) {
 /**
  * Retrieves the current chat ID from the URL
  * Extracts the ID from ChatGPT's URL pattern: /c/{chat_id}
- * 
+ *
  * @returns {string|null} Chat ID or null if not in a chat
  */
 function getCurrentChatId() {
@@ -154,7 +160,7 @@ function getCurrentChatId() {
  * 1. Active/selected chat in sidebar
  * 2. Sidebar link matching current chat ID
  * 3. Document title (fallback)
- * 
+ *
  * @returns {string|null} Chat title or null if not found
  */
 function getCurrentChatTitle() {
@@ -199,7 +205,7 @@ function getCurrentChatTitle() {
  * 1. Presence of "Stop generating" button
  * 2. Disabled state of send button
  * 3. Streaming indicator elements
- * 
+ *
  * @returns {boolean} True if ChatGPT is generating, false otherwise
  */
 function isChatGPTGenerating() {
@@ -237,7 +243,7 @@ function isChatGPTGenerating() {
  * 3. Visible "Log in" button detection
  * 4. Navigation sidebar (only present when logged in)
  * 5. User menu/avatar elements
- * 
+ *
  * @returns {boolean} True if on login page, false if logged in
  */
 function isLoginPage() {
@@ -295,7 +301,7 @@ function isLoginPage() {
  * 2. Wait 2.5 seconds (let user see it)
  * 3. Collapse sidebar
  * 4. Add pulse animation to toggle button (2 seconds)
- * 
+ *
  * @returns {Promise<void>}
  */
 async function triggerWelcomeAnimation() {
@@ -319,24 +325,54 @@ async function triggerWelcomeAnimation() {
     // 2. Wait 2.5 seconds
     await new Promise(resolve => setTimeout(resolve, TIMINGS.WELCOME_ANIMATION_DELAY));
 
-    // 3. Collapse the sidebar
+    // 3. Collapse the sidebar and transition to unpinned mode
     sidebar.classList.add('collapsed');
     updateToggleButton(toggle, false);
     sidebarOpen = false;
+    sidebarMode = 'unpinned'; // Set to unpinned mode for hover-to-expand
 
-    // 4. Add pulse animation to toggle button
+    // 4. Setup hover behavior for unpinned mode
+    setupHoverBehavior();
+
+    // 5. Save the new state
+    await saveSidebarState();
+
+    // 6. Add pulse animation to toggle button
     toggle.classList.add('toggle-pulse');
 
-    // 5. Remove pulse animation after it completes (2s for both pulses)
+    // 7. Remove pulse animation after it completes (2s for both pulses)
     setTimeout(() => {
       toggle.classList.remove('toggle-pulse');
     }, TIMINGS.PULSE_ANIMATION_DURATION);
 
-    debugLog('Prompt Pins: Welcome animation complete');
+    debugLog('Prompt Pins: Welcome animation complete, sidebar in unpinned mode with hover');
   } catch (error) {
     console.error('Prompt Pins: Welcome animation failed:', error);
     // Animation failure is non-critical, continue normally
   }
+}
+
+
+/**
+ * Triggers pulse animation on minimize button for first-time mode
+ * This helps users upgrading from v1.2.1 discover the new persistence controls
+ * Animation runs once when sidebar is in 'first-time' mode
+ * After user clicks minimize, they transition to 'unpinned' mode
+ */
+function triggerFirstTimePulseAnimation() {
+  const toggle = cachedElements.toggleBtn;
+  if (!toggle) return;
+
+  debugLog('Prompt Pins: Triggering first-time pulse animation on minimize button');
+
+  // Add pulse animation to toggle button
+  toggle.classList.add('toggle-pulse');
+
+  // Remove pulse animation after it completes (2s for both pulses)
+  setTimeout(() => {
+    toggle.classList.remove('toggle-pulse');
+    debugLog('Prompt Pins: First-time pulse animation complete');
+  }, TIMINGS.PULSE_ANIMATION_DURATION);
 }
 
 
@@ -348,7 +384,7 @@ async function triggerWelcomeAnimation() {
  * - Respects manual user overrides
  * - Triggers welcome animation for first-time logged-out users
  * - Avoids collapsing during pin creation
- * 
+ *
  * @returns {void}
  */
 function handleLoginStateChange() {
@@ -375,6 +411,12 @@ function handleLoginStateChange() {
       return; // Don't auto-collapse while user is creating a pin
     }
 
+    // CRITICAL: Don't interfere with temporary hover expansion
+    if (isHoverExpanded) {
+      debugLog('Prompt Pins: Sidebar is hover-expanded, not interfering');
+      return; // Let hover behavior handle the collapse
+    }
+
     // On login page - collapse sidebar if not already collapsed
     // BUT respect if user manually expanded it (manual override)
     if (!sidebar.classList.contains('collapsed') && !manualOverrideOnLogin) {
@@ -388,6 +430,8 @@ function handleLoginStateChange() {
       updateToggleButton(toggle, false);
       sidebarOpen = false; // Update state to match visual
       wasOnLoginPage = true;
+
+      // Don't setup hover on login page - wait until logged in
     }
   } else {
     // Logged in - restore saved sidebar state or default to expanded for new users
@@ -400,11 +444,17 @@ function handleLoginStateChange() {
           sidebar.classList.remove('collapsed');
           updateToggleButton(toggle, true);
           sidebarOpen = true;
+          // Restore to pinned mode if they had it open
+          sidebarMode = 'pinned';
+          cleanupHoverBehavior(); // No hover in pinned mode
         } else {
           // User's preference was collapsed, keep it that way
           sidebar.classList.add('collapsed');
           updateToggleButton(toggle, false);
           sidebarOpen = false;
+          // They had it collapsed, so they're in unpinned mode
+          sidebarMode = 'unpinned';
+          setupHoverBehavior(); // Enable hover in unpinned mode
         }
       } else {
         // New user - default to expanded to show features
@@ -412,6 +462,9 @@ function handleLoginStateChange() {
         sidebar.classList.remove('collapsed');
         updateToggleButton(toggle, true);
         sidebarOpen = true;
+        // New user starts in first-time mode
+        sidebarMode = 'first-time';
+        cleanupHoverBehavior(); // No hover in first-time mode
       }
 
       // Save the restored or default preference
@@ -462,7 +515,7 @@ function stopLoginStateWatcher() {
 /**
  * Gets the appropriate prefix for a pin based on its context
  * Handles cross-chat pins with actual chat titles
- * 
+ *
  * @param {Object} pin - The pin object
  * @param {boolean} isFromDifferentChat - Whether pin is from a different chat
  * @param {string} defaultPrefix - The prefix to use if not cross-chat (EXPAND_PREFIX or REGARDING_PREFIX)
@@ -472,9 +525,9 @@ function getPinPrefix(pin, isFromDifferentChat, defaultPrefix) {
   if (!isFromDifferentChat) {
     return defaultPrefix;
   }
-  
+
   // Cross-chat pin: use actual chat title if available
-  return pin.chatTitle 
+  return pin.chatTitle
     ? `From another ChatGPT conversation (${pin.chatTitle})`
     : UI_TEXT.CROSS_CHAT_PREFIX;
 }
@@ -558,26 +611,72 @@ function createSVGIcon(className) {
 
 // Update toggle button icon and tooltip based on sidebar state
 function updateToggleButton(toggleBtn, isOpen) {
+  // Windows taskbar pattern:
+  // - Collapsed + unpinned: Button hidden (CSS handles this via .collapsed class)
+  // - Expanded + unpinned (hover): Show teal lock icon
+  // - Expanded + pinned: Show gray minimize icon
+
   toggleBtn.innerHTML = '';
 
-  if (isOpen) {
-    toggleBtn.title = 'Minimize Prompt Pins';
-    const icon = createSVGIcon('toggle-icon-minus');
-    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    line.setAttribute('x1', '5');
-    line.setAttribute('y1', '12');
-    line.setAttribute('x2', '19');
-    line.setAttribute('y2', '12');
-    icon.appendChild(line);
+  if (sidebarMode === 'pinned') {
+    // Pinned mode: show lock icon in teal (actively locked state)
+    toggleBtn.title = 'Unpin sidebar';
+    const icon = createSVGIcon('toggle-icon-lock');
+
+    // Lock icon: rounded rectangle (body) + arc (shackle) in teal
+    const body = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    body.setAttribute('x', '7');
+    body.setAttribute('y', '11');
+    body.setAttribute('width', '10');
+    body.setAttribute('height', '8');
+    body.setAttribute('rx', '1');
+    body.setAttribute('stroke', '#10a37f'); // Teal color - active locked state
+    body.setAttribute('stroke-width', '2');
+    body.setAttribute('fill', 'none');
+    icon.appendChild(body);
+
+    // Shackle (top arc)
+    const shackle = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    shackle.setAttribute('d', 'M9 11V8a3 3 0 0 1 6 0v3');
+    shackle.setAttribute('stroke', '#10a37f'); // Teal color - active locked state
+    shackle.setAttribute('stroke-width', '2');
+    shackle.setAttribute('fill', 'none');
+    shackle.setAttribute('stroke-linecap', 'round');
+    icon.appendChild(shackle);
+
     toggleBtn.appendChild(icon);
   } else {
-    toggleBtn.title = 'Expand Prompt Pins';
-    const icon = createSVGIcon('toggle-icon-pin');
-    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.setAttribute('d', 'M12 2v20M16 6l-4 4-4-4M16 18l-4-4-4 4');
-    icon.appendChild(path);
+    // Unpinned mode (including first-time): show lock icon in gray (unlocked state)
+    // This appears during hover expansion, indicating "click to lock this open"
+    toggleBtn.title = 'Pin sidebar open';
+    const icon = createSVGIcon('toggle-icon-lock');
+
+    // Lock icon: rounded rectangle (body) + arc (shackle) in gray
+    const body = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    body.setAttribute('x', '7');
+    body.setAttribute('y', '11');
+    body.setAttribute('width', '10');
+    body.setAttribute('height', '8');
+    body.setAttribute('rx', '1');
+    body.setAttribute('stroke', '#8e8ea0'); // Gray color - inactive unlocked state
+    body.setAttribute('stroke-width', '2');
+    body.setAttribute('fill', 'none');
+    icon.appendChild(body);
+
+    // Shackle (top arc)
+    const shackle = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    shackle.setAttribute('d', 'M9 11V8a3 3 0 0 1 6 0v3');
+    shackle.setAttribute('stroke', '#8e8ea0'); // Gray color - inactive unlocked state
+    shackle.setAttribute('stroke-width', '2');
+    shackle.setAttribute('fill', 'none');
+    shackle.setAttribute('stroke-linecap', 'round');
+    icon.appendChild(shackle);
+
     toggleBtn.appendChild(icon);
   }
+
+  // Note: CSS already handles hiding .corner-toggle-btn when .collapsed class is present
+  // So when collapsed + unpinned, the button is automatically hidden by CSS
 }
 
 // Create keyboard shortcuts help button with tooltip
@@ -587,70 +686,70 @@ function createHelpButton() {
   helpBtn.className = 'keyboard-shortcuts-help-btn';
   helpBtn.textContent = 'ⓘ';
   helpBtn.setAttribute('aria-label', 'View keyboard shortcuts');
-  
+
   // Create tooltip element
   const tooltip = document.createElement('div');
   tooltip.className = 'keyboard-shortcuts-tooltip';
-  
+
   // Create title
   const title = document.createElement('div');
   title.className = 'tooltip-title';
   title.textContent = 'Keyboard Shortcuts';
   tooltip.appendChild(title);
-  
+
   // Create shortcuts container
   const shortcutsContainer = document.createElement('div');
   shortcutsContainer.className = 'tooltip-shortcuts';
-  
+
   // Create shortcut row helper function
   const createShortcutRow = (keyCombo, description) => {
     const row = document.createElement('div');
     row.className = 'tooltip-shortcut';
-    
+
     const keySpan = document.createElement('span');
     keySpan.className = 'shortcut-key';
     keySpan.textContent = keyCombo;
-    
+
     const descSpan = document.createElement('span');
     descSpan.className = 'shortcut-desc';
     descSpan.textContent = description;
-    
+
     row.appendChild(keySpan);
     row.appendChild(descSpan);
     return row;
   };
-  
+
   // Add each shortcut row
   shortcutsContainer.appendChild(createShortcutRow(SHORTCUTS.createPin, 'Create pin / Manual creation'));
   shortcutsContainer.appendChild(createShortcutRow(SHORTCUTS.sendImmediately, 'Send text immediately'));
   shortcutsContainer.appendChild(createShortcutRow(SHORTCUTS.useNextPin, 'Use next pin in queue'));
-  
+
   tooltip.appendChild(shortcutsContainer);
-  
+
   // Create version display
   const version = browser.runtime.getManifest().version;
   const versionDiv = document.createElement('div');
   versionDiv.className = 'tooltip-version';
   versionDiv.textContent = `Version ${version}`;
   tooltip.appendChild(versionDiv);
-  
+
   // Create footer with customization instructions
   const footer = document.createElement('div');
   footer.className = 'tooltip-footer';
   footer.textContent = 'Customize shortcuts in browser settings';
   tooltip.appendChild(footer);
-  
+
   helpBtn.appendChild(tooltip);
-  
+
   // Show/hide tooltip on hover
   helpBtn.addEventListener('mouseenter', () => {
     tooltip.style.display = 'block';
   });
-  
+
   helpBtn.addEventListener('mouseleave', () => {
     tooltip.style.display = 'none';
   });
-  
+
   return helpBtn;
 }
 
@@ -687,13 +786,8 @@ function createSidebar() {
   clearAllBtn.title = 'Clear all pins';
   clearAllBtn.textContent = 'Clear';
 
-  const toggleBtn = document.createElement('button');
-  toggleBtn.id = 'toggle-pins';
-  updateToggleButton(toggleBtn, true); // Start in expanded state
-
   headerButtons.appendChild(helpBtn);
   headerButtons.appendChild(clearAllBtn);
-  headerButtons.appendChild(toggleBtn);
   header.appendChild(headerTitle);
   header.appendChild(headerButtons);
 
@@ -709,10 +803,42 @@ function createSidebar() {
   pinsList.id = 'pins-list';
   pinsList.className = 'pins-list';
 
+  // Create toggle button (positioned in bottom-left corner when expanded)
+  const toggleBtn = document.createElement('button');
+  toggleBtn.id = 'toggle-pins';
+  toggleBtn.className = 'corner-toggle-btn';
+  updateToggleButton(toggleBtn, true); // Start in expanded state
+
+  // Create Create Pin button for collapsed rail (top) - smart text detection
+  const collapsedIcon = document.createElement('button');
+  collapsedIcon.id = 'collapsed-rail-icon';
+  collapsedIcon.className = 'collapsed-rail-icon collapsed-rail-btn';
+  collapsedIcon.title = 'Create new pin';
+  collapsedIcon.innerHTML = `
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10a37f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2v20M16 6l-4 4-4-4M16 18l-4-4-4 4"/>
+    </svg>
+  `;
+
+  // Create chevron expand button for collapsed rail (bottom) - indicates expansion
+  const expandChevronBtn = document.createElement('button');
+  expandChevronBtn.id = 'expand-chevron-btn';
+  expandChevronBtn.className = 'collapsed-rail-btn';
+  expandChevronBtn.title = 'Expand sidebar (hover or click)';
+  expandChevronBtn.innerHTML = `
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M12 18l-6-6 6-6"/>
+      <path d="M18 18l-6-6 6-6"/>
+    </svg>
+  `;
+
   // Assemble sidebar
   sidebar.appendChild(header);
   sidebar.appendChild(nextBtn);
   sidebar.appendChild(pinsList);
+  sidebar.appendChild(toggleBtn);
+  sidebar.appendChild(collapsedIcon); // Create Pin button at top
+  sidebar.appendChild(expandChevronBtn); // Chevrons at bottom
 
   document.body.appendChild(sidebar);
 
@@ -725,17 +851,33 @@ function createSidebar() {
 
   // Attach event listeners
   toggleBtn.addEventListener('click', toggleSidebar);
+  expandChevronBtn.addEventListener('click', toggleSidebar); // Expand button triggers same toggle
   clearAllBtn.addEventListener('click', confirmClearAll);
   nextBtn.addEventListener('click', () => {
-    if (pins.length > 0) {
-      usePin(0, true);
+    const indexToUse = getNextPinIndex();
+    if (indexToUse !== -1) {
+      usePin(indexToUse, true);
     }
+  });
+
+  // Create Pin button - smart text detection
+  collapsedIcon.addEventListener('click', () => {
+    const selectedText = window.getSelection().toString().trim();
+    createPin(selectedText); // Handles both selected text and blank form
   });
 
   // Apply saved sidebar state
   if (!sidebarOpen) {
     sidebar.classList.add('collapsed');
     updateToggleButton(toggleBtn, false);
+  }
+
+  // Setup hover behavior based on current mode
+  setupHoverBehavior();
+
+  // If in first-time mode (migration from v1.2.1 or new install), add pulse animation
+  if (sidebarMode === 'first-time') {
+    triggerFirstTimePulseAnimation();
   }
 
   // Load saved pins
@@ -751,22 +893,47 @@ function toggleSidebar() {
     debugLog('Prompt Pins: User manually toggled, canceling auto-collapse');
   }
 
-  sidebarOpen = !sidebarOpen;
+  // If user manually toggles during hover-expand, clear hover timers and state
+  if (isHoverExpanded) {
+    clearHoverTimers();
+    isHoverExpanded = false;
+    debugLog('Prompt Pins: User manually toggled during hover, clearing hover state');
+  }
+
   const sidebar = cachedElements.sidebar;
   const toggle = cachedElements.toggleBtn;
 
-  if (sidebarOpen) {
+  // Determine action based on current mode
+  if (sidebarMode === 'first-time') {
+    // First minimize: transition to unpinned mode
+    sidebarOpen = false;
+    sidebar.classList.add('collapsed');
+    sidebarMode = 'unpinned'; // Update mode BEFORE updateToggleButton
+    updateToggleButton(toggle, false);
+    setupHoverBehavior();
+    debugLog('Prompt Pins: First minimize, transitioning to unpinned mode');
+  } else if (sidebarMode === 'unpinned') {
+    // Unpinned → Pinned: Expand and pin open
+    sidebarOpen = true;
     sidebar.classList.remove('collapsed');
+    sidebarMode = 'pinned'; // Update mode BEFORE updateToggleButton
     updateToggleButton(toggle, true);
+    cleanupHoverBehavior(); // Disable hover in pinned mode
+    debugLog('Prompt Pins: Unpinned → Pinned (sidebar locked open, hover disabled)');
 
     // If user manually expands on login page, set override flag
     if (isLoginPage()) {
       manualOverrideOnLogin = true;
       debugLog('Prompt Pins: User manually expanded sidebar on login page');
     }
-  } else {
+  } else if (sidebarMode === 'pinned') {
+    // Pinned → Unpinned: Collapse and enable hover
+    sidebarOpen = false;
     sidebar.classList.add('collapsed');
+    sidebarMode = 'unpinned'; // Update mode BEFORE updateToggleButton
     updateToggleButton(toggle, false);
+    setupHoverBehavior(); // Re-enable hover in unpinned mode
+    debugLog('Prompt Pins: Pinned → Unpinned (sidebar minimized, hover enabled)');
 
     // If user manually collapses, clear override flag
     manualOverrideOnLogin = false;
@@ -789,6 +956,16 @@ function autoExpandSidebar() {
   sidebar.classList.remove('collapsed');
   updateToggleButton(toggle, true);
   isAutoExpanded = true;
+
+  // Clear hover state if it was set - auto-expand takes precedence
+  if (isHoverExpanded) {
+    isHoverExpanded = false;
+    // Clear any pending hover-leave timer
+    if (hoverLeaveTimeout !== null) {
+      clearTimeout(hoverLeaveTimeout);
+      hoverLeaveTimeout = null;
+    }
+  }
 }
 
 // Auto-collapse sidebar back to original state
@@ -805,6 +982,178 @@ function autoCollapseSidebar() {
   updateToggleButton(toggle, false);
   isAutoExpanded = false;
   autoCollapseTimeout = null;
+}
+
+// ============================================================================
+// HOVER-TO-EXPAND BEHAVIOR (Unpinned Mode)
+// ============================================================================
+
+/**
+ * Clears all hover-related timers
+ * Called when cleaning up hover behavior or when user manually toggles
+ */
+function clearHoverTimers() {
+  if (hoverEnterTimeout !== null) {
+    clearTimeout(hoverEnterTimeout);
+    hoverEnterTimeout = null;
+  }
+  if (hoverLeaveTimeout !== null) {
+    clearTimeout(hoverLeaveTimeout);
+    hoverLeaveTimeout = null;
+  }
+}
+
+/**
+ * Handles mouse entering the collapsed sidebar
+ * Starts timer to expand after HOVER_ENTER_DELAY
+ */
+function handleSidebarHoverEnter() {
+  // Only apply hover behavior in unpinned mode
+  if (sidebarMode !== 'unpinned') return;
+
+  // Cancel any pending leave timer
+  if (hoverLeaveTimeout !== null) {
+    clearTimeout(hoverLeaveTimeout);
+    hoverLeaveTimeout = null;
+  }
+
+  // Start enter timer (if not already expanded)
+  if (!isHoverExpanded && hoverEnterTimeout === null) {
+    debugLog('Prompt Pins: Hover enter - starting expansion timer');
+    hoverEnterTimeout = setTimeout(() => {
+      hoverEnterTimeout = null;
+      expandSidebarOnHover();
+    }, TIMINGS.HOVER_ENTER_DELAY);
+  }
+}
+
+/**
+ * Handles mouse leaving the sidebar area
+ * Starts timer to collapse after HOVER_LEAVE_DELAY
+ */
+function handleSidebarHoverLeave() {
+  // Only apply hover behavior in unpinned mode
+  if (sidebarMode !== 'unpinned') return;
+
+  // Cancel any pending enter timer
+  if (hoverEnterTimeout !== null) {
+    clearTimeout(hoverEnterTimeout);
+    hoverEnterTimeout = null;
+  }
+
+  // Start leave timer (if currently hover-expanded)
+  if (isHoverExpanded && hoverLeaveTimeout === null) {
+    debugLog('Prompt Pins: Hover leave - starting collapse timer');
+    hoverLeaveTimeout = setTimeout(() => {
+      hoverLeaveTimeout = null;
+      collapseSidebarOnHover();
+    }, TIMINGS.HOVER_LEAVE_DELAY);
+  }
+}
+
+/**
+ * Temporarily expands the sidebar on hover
+ * Does NOT change sidebarMode or persist state to storage
+ */
+function expandSidebarOnHover() {
+  const sidebar = cachedElements.sidebar;
+  const toggle = cachedElements.toggleBtn;
+
+  if (!sidebar || !toggle) return;
+
+  debugLog('Prompt Pins: Expanding sidebar on hover (temporary)');
+
+  // Visually expand the sidebar
+  sidebar.classList.remove('collapsed');
+  updateToggleButton(toggle, true);
+  isHoverExpanded = true;
+
+  // Clear any leave timer that might have been set during expansion
+  // This prevents the sidebar from collapsing immediately when the expand
+  // causes a mouseleave event due to the DOM transformation
+  if (hoverLeaveTimeout !== null) {
+    clearTimeout(hoverLeaveTimeout);
+    hoverLeaveTimeout = null;
+  }
+}
+
+/**
+ * Collapses the sidebar back after hover
+ * Only if sidebar wasn't manually toggled during hover
+ */
+function collapseSidebarOnHover() {
+  const sidebar = cachedElements.sidebar;
+  const toggle = cachedElements.toggleBtn;
+
+  if (!sidebar || !toggle) return;
+
+  // Check if mode changed during hover (user manually toggled)
+  if (sidebarMode !== 'unpinned') {
+    debugLog('Prompt Pins: Sidebar mode changed during hover, skipping auto-collapse');
+    isHoverExpanded = false;
+    return;
+  }
+
+  // Don't collapse if sidebar is auto-expanded for manual pin creation
+  if (isAutoExpanded) {
+    debugLog('Prompt Pins: Sidebar is auto-expanded for pin creation, skipping hover collapse');
+    return;
+  }
+
+  // Don't collapse if user is currently using the inline form
+  const inlineForm = document.getElementById('inline-pin-form');
+  if (inlineForm && inlineForm.style.display !== 'none') {
+    debugLog('Prompt Pins: User is in inline form, skipping hover collapse');
+    return;
+  }
+
+  debugLog('Prompt Pins: Collapsing sidebar after hover (temporary)');
+
+  // Visually collapse the sidebar
+  sidebar.classList.add('collapsed');
+  updateToggleButton(toggle, false);
+  isHoverExpanded = false;
+}
+
+/**
+ * Attaches hover event listeners to the sidebar
+ * Only active when sidebarMode === 'unpinned'
+ */
+function setupHoverBehavior() {
+  const sidebar = cachedElements.sidebar;
+  if (!sidebar) return;
+
+  // Remove any existing listeners first (prevent duplicates)
+  sidebar.removeEventListener('mouseenter', handleSidebarHoverEnter);
+  sidebar.removeEventListener('mouseleave', handleSidebarHoverLeave);
+
+  // Only attach listeners in unpinned mode
+  if (sidebarMode === 'unpinned') {
+    debugLog('Prompt Pins: Setting up hover behavior (unpinned mode)');
+    sidebar.addEventListener('mouseenter', handleSidebarHoverEnter);
+    sidebar.addEventListener('mouseleave', handleSidebarHoverLeave);
+  }
+}
+
+/**
+ * Removes hover event listeners from the sidebar
+ * Called when changing modes or cleaning up
+ */
+function cleanupHoverBehavior() {
+  const sidebar = cachedElements.sidebar;
+  if (!sidebar) return;
+
+  debugLog('Prompt Pins: Cleaning up hover behavior');
+
+  // Clear any pending timers
+  clearHoverTimers();
+
+  // Remove event listeners
+  sidebar.removeEventListener('mouseenter', handleSidebarHoverEnter);
+  sidebar.removeEventListener('mouseleave', handleSidebarHoverLeave);
+
+  // Reset hover state
+  isHoverExpanded = false;
 }
 
 
@@ -843,14 +1192,36 @@ async function savePins() {
 // Load sidebar state from storage
 async function loadSidebarState() {
   try {
-    const result = await browser.storage.local.get(['sidebarOpen', 'hasSeenWelcome']);
-    // If no saved state exists, default to true (open)
-    sidebarOpen = result.sidebarOpen !== undefined ? result.sidebarOpen : true;
+    const result = await browser.storage.local.get(['sidebarMode', 'sidebarOpen', 'hasSeenWelcome']);
+
+    // Migration: If sidebarMode doesn't exist but sidebarOpen does (upgrading from v1.2.1)
+    if (result.sidebarMode === undefined && result.sidebarOpen !== undefined) {
+      // All v1.2.1 users get the first-time experience to discover new features
+      // This shows them the pulse animation on the minimize button
+      sidebarMode = 'first-time';
+      debugLog('Migrating from v1.2.1: sidebarOpen=' + result.sidebarOpen + ' → sidebarMode=first-time (showing new feature)');
+
+      // Save migrated state and clean up old key
+      await browser.storage.local.set({ sidebarMode });
+      await browser.storage.local.remove('sidebarOpen');
+    } else if (result.sidebarMode !== undefined) {
+      // Use saved mode
+      sidebarMode = result.sidebarMode;
+    } else {
+      // New install - default to first-time
+      sidebarMode = 'first-time';
+    }
+
+    // Set sidebarOpen for UI compatibility (will be phased out later)
+    // 'first-time' and 'pinned' both show sidebar expanded
+    sidebarOpen = (sidebarMode === 'first-time' || sidebarMode === 'pinned');
+
     // Check if user has seen the welcome animation
     hasSeenWelcome = result.hasSeenWelcome !== undefined ? result.hasSeenWelcome : false;
   } catch (error) {
     console.error('Prompt Pins: Failed to load sidebar state from storage:', error);
     // Use defaults
+    sidebarMode = 'first-time';
     sidebarOpen = true;
     hasSeenWelcome = false;
   }
@@ -859,7 +1230,7 @@ async function loadSidebarState() {
 // Save sidebar state to storage
 async function saveSidebarState() {
   try {
-    await browser.storage.local.set({ sidebarOpen });
+    await browser.storage.local.set({ sidebarMode });
   } catch (error) {
     console.error('Prompt Pins: Failed to save sidebar state to storage:', error);
   }
@@ -918,9 +1289,9 @@ function renderEmptyState() {
  * Handles two pin types:
  * 1. Text-based pins (from highlights) - shows quoted text + optional comment
  * 2. Manual pins - shows editable plain text
- * 
+ *
  * Also adds: cross-chat badges, queued badges, action buttons, timestamp
- * 
+ *
  * @param {Object} pin - The pin object from pins array
  * @param {number} index - Index of pin in pins array
  * @param {string|null} currentChatId - Current chat ID for cross-chat detection
@@ -947,7 +1318,7 @@ function createPinItem(pin, index, currentChatId) {
   // Determine if this pin has a selectedText (quoted text from highlight)
   // vs. manually created plain text
   const hasSelectedText = pin.selectedText && pin.selectedText.trim().length > 0;
-  
+
   if (hasSelectedText) {
     // Pin Type 1: From highlighted text - show quoted text (NOT editable)
     const pinText = document.createElement('div');
@@ -961,16 +1332,16 @@ function createPinItem(pin, index, currentChatId) {
       pinCommentWrapper.className = 'pin-comment-wrapper';
       pinCommentWrapper.setAttribute('data-index', index);
       pinCommentWrapper.setAttribute('data-field', 'comment');
-      
+
       const pinComment = document.createElement('div');
       pinComment.className = 'pin-comment pin-editable-field';
       pinComment.textContent = pin.comment;
-      
+
       const editIcon = document.createElement('span');
       editIcon.className = 'edit-icon';
       editIcon.textContent = '✏️';
       editIcon.title = 'Click to edit';
-      
+
       pinCommentWrapper.appendChild(pinComment);
       pinCommentWrapper.appendChild(editIcon);
       pinItem.appendChild(pinCommentWrapper);
@@ -981,18 +1352,18 @@ function createPinItem(pin, index, currentChatId) {
     pinTextWrapper.className = 'pin-text-wrapper';
     pinTextWrapper.setAttribute('data-index', index);
     pinTextWrapper.setAttribute('data-field', 'text');
-    
+
     const pinText = document.createElement('div');
     pinText.className = 'pin-text pin-editable-field';
     pinText.textContent = pin.text;
     pinText.style.fontStyle = 'normal'; // Override italic style for manual pins
     pinText.style.borderLeft = 'none'; // Remove quote border
-    
+
     const editIcon = document.createElement('span');
     editIcon.className = 'edit-icon';
     editIcon.textContent = '✏️';
     editIcon.title = 'Click to edit';
-    
+
     pinTextWrapper.appendChild(pinText);
     pinTextWrapper.appendChild(editIcon);
     pinItem.appendChild(pinTextWrapper);
@@ -1096,7 +1467,7 @@ function attachEditingHandlers() {
   list.querySelectorAll('.pin-comment-wrapper, .pin-text-wrapper').forEach(wrapper => {
     const editableField = wrapper.querySelector('.pin-editable-field');
     const editIcon = wrapper.querySelector('.edit-icon');
-    
+
     if (editableField && editIcon) {
       // Click on field or icon to edit
       const startEdit = () => enterEditMode(wrapper);
@@ -1115,7 +1486,7 @@ function attachEditingHandlers() {
  * - Creates all pin items efficiently (using DocumentFragment)
  * - Attaches drag/drop and editing handlers
  * - Adds inline creation UI
- * 
+ *
  * @returns {void}
  */
 function renderPins() {
@@ -1140,8 +1511,25 @@ function renderPins() {
   const currentChatId = getCurrentChatId();
   const fragment = document.createDocumentFragment();
 
-  // Create all pin items
+  // Sort pins for display: current-chat pins first (at top), other-chat pins after (at bottom)
+  // Uses single-pass sorting with index tracking for O(n) performance instead of O(n²)
+  // Maintains original array indices for proper event handling (delete, use, edit buttons)
+  const currentChatPins = [];
+  const otherChatPins = [];
+
   pins.forEach((pin, index) => {
+    const pinData = { pin, index };
+    if (pin.chatId === currentChatId) {
+      currentChatPins.push(pinData);
+    } else {
+      otherChatPins.push(pinData);
+    }
+  });
+
+  const sortedPins = [...currentChatPins, ...otherChatPins];
+
+  // Create all pin items using sorted order with original indices
+  sortedPins.forEach(({ pin, index }) => {
     const pinItem = createPinItem(pin, index, currentChatId);
     fragment.appendChild(pinItem);
   });
@@ -1203,7 +1591,7 @@ function createInlinePinForm() {
 // Helper: Show the inline form and hide empty state
 function showInlineForm(formContainer, textarea) {
   const list = cachedElements.pinsList;
-  
+
   // Hide empty state message if present
   const emptyState = list.querySelector('.empty-state');
   if (emptyState) {
@@ -1228,6 +1616,16 @@ function hideInlineForm(formContainer) {
       emptyState.style.display = 'block';
     }
   }
+
+  // If sidebar was auto-expanded for manual creation and form is being closed
+  // Only collapse immediately if NO delayed collapse is already scheduled
+  // (Delayed collapse is scheduled when a pin is successfully created)
+  if (isAutoExpanded && autoCollapseTimeout === null) {
+    // No delayed collapse scheduled - this is a cancel or empty save
+    autoCollapseSidebar();
+  }
+  // Note: If a delayed collapse IS scheduled, let it happen naturally
+  // Note: If hover-expanded, the collapse is handled in saveInlinePin() after highlight animation
 }
 
 // Helper: Save a new pin from the inline form
@@ -1250,20 +1648,36 @@ function saveInlinePin(textarea, hideForm) {
     isManuallyCreated: true // Flag for manual creation
   };
 
+  // Pins are always created in the current chat
+  // Add to end for natural chronological order
   pins.push(newPin);
+
   savePins();
   renderPins();
 
-  // Highlight the newly created pin
+  // Highlight the newly created pin (at the end of the array)
   const newPinIndex = pins.length - 1;
   highlightNewPin(newPinIndex);
 
-  // If sidebar was auto-expanded (keyboard shortcut with no text), schedule auto-collapse
+  // Schedule collapse based on how sidebar was expanded
   if (isAutoExpanded) {
+    // Sidebar was auto-expanded (was collapsed before) - use full auto-collapse delay
     // Wait for highlight animation to complete (1.5s) + small buffer
     autoCollapseTimeout = setTimeout(() => {
       autoCollapseSidebar();
     }, TIMINGS.AUTO_COLLAPSE_DELAY); // 2 seconds total: 1.5s animation + 0.5s buffer
+  } else if (isHoverExpanded && sidebarMode === 'unpinned') {
+    // Sidebar was hover-expanded - wait for highlight, then start hover-leave timer
+    // This gives user time to see the animation before collapse begins
+    autoCollapseTimeout = setTimeout(() => {
+      if (hoverLeaveTimeout === null) {
+        debugLog('Prompt Pins: Highlight complete, starting hover-leave timer');
+        hoverLeaveTimeout = setTimeout(() => {
+          hoverLeaveTimeout = null;
+          collapseSidebarOnHover();
+        }, TIMINGS.HOVER_LEAVE_DELAY);
+      }
+    }, TIMINGS.HIGHLIGHT_ANIMATION_DURATION); // Wait for highlight to complete first
   }
 
   hideForm();
@@ -1330,8 +1744,9 @@ function highlightNewPin(index) {
   const pinsList = cachedElements.pinsList;
   if (!pinsList) return;
 
-  const pinItems = pinsList.querySelectorAll('.pin-item');
-  const newPinElement = pinItems[index];
+  // Find the pin element by its data-index attribute (not DOM position)
+  // This is important because renderPins() sorts pins, so DOM position != array index
+  const newPinElement = pinsList.querySelector(`.pin-item[data-index="${index}"]`);
 
   if (newPinElement) {
     // Add highlight class
@@ -1380,28 +1795,28 @@ function enterEditMode(wrapper) {
   const index = parseInt(wrapper.getAttribute('data-index'));
   const field = wrapper.getAttribute('data-field'); // 'comment' or 'text'
   const pin = pins[index];
-  
+
   if (!pin) return;
-  
+
   // Get current value
   const currentValue = field === 'comment' ? pin.comment : pin.text;
-  
+
   // Get the editable field and icon
   const editableField = wrapper.querySelector('.pin-editable-field');
   const editIcon = wrapper.querySelector('.edit-icon');
-  
+
   if (!editableField) return;
-  
+
   // Fix for Firefox: Disable dragging on parent pin-item to prevent conflicts with textarea interaction
   const pinItem = wrapper.closest('.pin-item');
   if (pinItem) {
     pinItem.setAttribute('draggable', 'false');
   }
-  
+
   // Hide the field and icon
   editableField.style.display = 'none';
   if (editIcon) editIcon.style.display = 'none';
-  
+
   // Create textarea for editing
   const textarea = document.createElement('textarea');
   textarea.className = 'pin-edit-textarea';
@@ -1417,18 +1832,18 @@ function enterEditMode(wrapper) {
   textarea.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
   textarea.style.resize = 'vertical';
   textarea.style.marginBottom = '8px';
-  
+
   // Prevent drag events from interfering with text selection
   textarea.addEventListener('mousedown', (e) => {
     e.stopPropagation();
   });
-  
+
   // Create button container
   const buttonContainer = document.createElement('div');
   buttonContainer.style.display = 'flex';
   buttonContainer.style.gap = '8px';
   buttonContainer.style.justifyContent = 'flex-end';
-  
+
   // Create Save button
   const saveBtn = document.createElement('button');
   saveBtn.textContent = 'Save';
@@ -1441,14 +1856,14 @@ function enterEditMode(wrapper) {
   saveBtn.style.background = '#10a37f';
   saveBtn.style.color = 'white';
   saveBtn.style.fontWeight = '500';
-  
+
   saveBtn.addEventListener('mouseenter', () => {
     saveBtn.style.background = '#0d8c6a';
   });
   saveBtn.addEventListener('mouseleave', () => {
     saveBtn.style.background = '#10a37f';
   });
-  
+
   // Create Cancel button
   const cancelBtn = document.createElement('button');
   cancelBtn.textContent = 'Cancel';
@@ -1460,26 +1875,26 @@ function enterEditMode(wrapper) {
   cancelBtn.style.border = '1px solid #3e3e3e';
   cancelBtn.style.background = '#2a2a2a';
   cancelBtn.style.color = '#ececec';
-  
+
   cancelBtn.addEventListener('mouseenter', () => {
     cancelBtn.style.background = '#3e3e3e';
   });
   cancelBtn.addEventListener('mouseleave', () => {
     cancelBtn.style.background = '#2a2a2a';
   });
-  
+
   // Add buttons to container
   buttonContainer.appendChild(saveBtn);
   buttonContainer.appendChild(cancelBtn);
-  
+
   // Insert editing UI after the hidden field
   wrapper.insertBefore(textarea, editableField.nextSibling);
   wrapper.insertBefore(buttonContainer, textarea.nextSibling);
-  
+
   // Focus the textarea and select content
   textarea.focus();
   textarea.select();
-  
+
   // Auto-resize textarea
   const autoResize = () => {
     textarea.style.height = 'auto';
@@ -1487,42 +1902,42 @@ function enterEditMode(wrapper) {
   };
   textarea.addEventListener('input', autoResize);
   autoResize();
-  
+
   // Save handler
   const save = () => {
     const newValue = textarea.value.trim();
-    
+
     if (!newValue) {
       // Don't allow empty values
       textarea.focus();
       return;
     }
-    
+
     // Update the pin
     if (field === 'comment') {
       pin.comment = newValue;
     } else {
       pin.text = newValue;
     }
-    
+
     // Save and re-render
     savePins();
     renderPins();
-    
+
     // Highlight the updated pin
     highlightNewPin(index);
   };
-  
+
   // Cancel handler
   const cancel = () => {
     // Just re-render to restore original state
     renderPins();
   };
-  
+
   // Event listeners
   saveBtn.addEventListener('click', save);
   cancelBtn.addEventListener('click', cancel);
-  
+
   // Keyboard shortcuts
   textarea.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -1612,7 +2027,7 @@ function handleDragEnd(e) {
  * If text is empty, opens the manual creation form
  * If text is provided, shows the comment input dialog
  * Handles auto-expand/collapse of sidebar for better UX
- * 
+ *
  * @param {string} text - Selected text to create pin from, or empty for manual creation
  * @returns {void}
  */
@@ -1620,7 +2035,7 @@ function createPin(text) {
   const isManualCreation = !text || text.trim() === '';
 
   if (isManualCreation) {
-    // Manual creation: expand sidebar if needed, trigger inline form
+    // Manual creation: expand sidebar if needed, show inline form directly
     if (!sidebarOpen) {
       // Clear any existing auto-collapse timeout
       if (autoCollapseTimeout) {
@@ -1628,14 +2043,19 @@ function createPin(text) {
         autoCollapseTimeout = null;
       }
 
-      // Auto-expand sidebar (sets isAutoExpanded flag)
+      // Auto-expand sidebar (sets isAutoExpanded flag, clears isHoverExpanded if needed)
       autoExpandSidebar();
     }
+    // Note: If sidebar is already open (pinned mode), no expansion needed
+    // Hover-expansion doesn't set sidebarOpen, so the above block handles that case
 
-    // Trigger the inline form
-    const inlineBtn = document.getElementById('inline-new-pin-btn');
-    if (inlineBtn) {
-      inlineBtn.click();
+    // Show the inline form directly
+    const inlineForm = document.getElementById('inline-pin-form');
+    const textarea = document.getElementById('inline-pin-textarea');
+    if (inlineForm && textarea) {
+      showInlineForm(inlineForm, textarea);
+    } else {
+      debugLog('Prompt Pins: Inline form not found, cannot show manual creation UI');
     }
     return; // EXIT EARLY
   }
@@ -1809,12 +2229,14 @@ function showCommentInput(selectedText, wasSidebarCollapsed = false) {
       chatTitle: chatTitle
     };
 
+    // Pins are always created in the current chat
+    // Add to end for natural chronological order
     pins.push(newPin);
 
     savePins();
     renderPins();
 
-    // Highlight the newly created pin
+    // Highlight the newly created pin (at the end of the array)
     const newPinIndex = pins.length - 1;
     highlightNewPin(newPinIndex);
 
@@ -1861,10 +2283,26 @@ function showCommentInput(selectedText, wasSidebarCollapsed = false) {
 // ============================================================================
 
 /**
+ * Finds the index of the first pin from the current chat
+ * Falls back to first pin in array if no current-chat pins exist
+ *
+ * @returns {number} Index of pin to use, or -1 if no pins exist
+ */
+function getNextPinIndex() {
+  if (pins.length === 0) return -1;
+
+  const currentChatId = getCurrentChatId();
+  const currentChatPinIndex = pins.findIndex(pin => pin.chatId === currentChatId);
+
+  // If there's a pin from current chat, use it; otherwise use first pin
+  return currentChatPinIndex !== -1 ? currentChatPinIndex : 0;
+}
+
+/**
  * Uses a pin by filling ChatGPT input and submitting
  * If ChatGPT is currently generating, queues the pin instead
  * Optionally deletes the pin after use
- * 
+ *
  * @param {number} index - Index of pin in pins array
  * @param {boolean} [shouldDelete=false] - Whether to delete pin after use
  * @returns {void}
@@ -1881,6 +2319,65 @@ function usePin(index, shouldDelete = false) {
   if (queuedPinIndex !== null && queuedPinIndex !== index) {
     return; // Silently ignore - button should already be disabled
   }
+
+  // Check if this is a cross-chat pin (from a different conversation)
+  const currentChatId = getCurrentChatId();
+  const isCrossChat = pin.chatId && pin.chatId !== currentChatId;
+
+  if (DEBUG) {
+    console.log('usePin() cross-chat check:', {
+      index,
+      pinChatId: pin.chatId,
+      currentChatId: currentChatId,
+      isCrossChat: isCrossChat
+    });
+  }
+
+  // If cross-chat pin, check if warning has been dismissed
+  if (isCrossChat) {
+    browser.storage.local.get(['crossChatWarningDismissed'])
+      .then(result => {
+        const warningDismissed = result.crossChatWarningDismissed || false;
+
+        if (DEBUG) {
+          console.log('Cross-chat warning dismissal status:', warningDismissed);
+        }
+
+        if (!warningDismissed) {
+          // Show warning banner and wait for user decision
+          showCrossChatWarning(index, shouldDelete);
+        } else {
+          // Warning dismissed - proceed normally
+          proceedWithPinUse(index, shouldDelete);
+        }
+      })
+      .catch(error => {
+        console.error('Error checking cross-chat warning preference:', error);
+        // On error, default to showing warning (safer)
+        showCrossChatWarning(index, shouldDelete);
+      });
+    return; // Exit early - will resume after user responds to warning
+  }
+
+  // Same-chat pin - proceed normally
+  proceedWithPinUse(index, shouldDelete);
+}
+
+/**
+ * Proceeds with using a pin (called after cross-chat warning check)
+ * Separated from usePin() to allow for async warning flow
+ *
+ * @param {number} index - Pin array index
+ * @param {boolean} shouldDelete - Whether to delete pin after use
+ * @returns {void}
+ */
+function proceedWithPinUse(index, shouldDelete) {
+  if (index < 0 || index >= pins.length) {
+    console.error('Invalid pin index:', index);
+    return;
+  }
+
+  const pin = pins[index];
 
   // Check if ChatGPT is actively generating a response
   const isGenerating = isChatGPTGenerating();
@@ -1900,6 +2397,126 @@ function usePin(index, shouldDelete = false) {
       deletePin(index);
     }
   }
+}
+
+/**
+ * Shows a warning banner when user tries to use a pin from a different conversation
+ * Banner appears above the ChatGPT textarea with options to cancel or proceed
+ * Includes a dismissible checkbox to permanently hide future warnings
+ *
+ * @param {number} index - Pin array index
+ * @param {boolean} shouldDelete - Whether to delete pin after use
+ * @returns {void}
+ */
+function showCrossChatWarning(index, shouldDelete) {
+  // Remove any existing warning banner
+  const existingWarning = document.getElementById('cross-chat-warning');
+  if (existingWarning) {
+    existingWarning.remove();
+  }
+
+  // Find the ChatGPT textarea container
+  const textareaContainer = document.querySelector('#prompt-textarea');
+  if (!textareaContainer) {
+    console.error('Could not find textarea container (#prompt-textarea) for warning banner');
+    // Fall back to proceeding without warning
+    proceedWithPinUse(index, shouldDelete);
+    return;
+  }
+
+  // Create warning banner
+  const banner = document.createElement('div');
+  banner.id = 'cross-chat-warning';
+  banner.className = 'cross-chat-warning-banner';
+
+  banner.innerHTML = `
+    <div class="warning-content">
+      <div class="warning-icon">⚠️</div>
+      <div class="warning-text">
+        <strong>Different Conversation</strong>
+        <p>This pin is from another conversation. Context may not match.</p>
+      </div>
+    </div>
+    <div class="warning-checkbox">
+      <label>
+        <input type="checkbox" id="dismiss-warning-checkbox">
+        Don't show this warning again
+      </label>
+    </div>
+    <div class="warning-buttons">
+      <button class="warning-btn-cancel">Cancel</button>
+      <button class="warning-btn-use">Use Anyway</button>
+    </div>
+  `;
+
+  // Insert banner above the textarea - try multiple strategies
+  let inserted = false;
+  
+  // Strategy 1: Insert before textarea's parent (the form or container)
+  const textareaParent = textareaContainer.parentElement;
+  if (textareaParent && textareaParent.parentElement) {
+    textareaParent.parentElement.insertBefore(banner, textareaParent);
+    inserted = true;
+  }
+
+  // Strategy 2: If that didn't work, try finding the form
+  if (!inserted) {
+    const form = textareaContainer.closest('form');
+    if (form && form.parentElement) {
+      form.parentElement.insertBefore(banner, form);
+      inserted = true;
+    }
+  }
+
+  // Strategy 3: Last resort - append to body
+  if (!inserted) {
+    console.warn('Could not find ideal insertion point for warning banner, appending to body');
+    document.body.appendChild(banner);
+    inserted = true;
+  }
+
+  // Get interactive elements
+  const dismissCheckbox = banner.querySelector('#dismiss-warning-checkbox');
+  const cancelBtn = banner.querySelector('.warning-btn-cancel');
+  const useBtn = banner.querySelector('.warning-btn-use');
+
+  if (!dismissCheckbox || !cancelBtn || !useBtn) {
+    console.error('Could not find banner interactive elements');
+    return;
+  }
+
+  // Handle checkbox - save preference immediately when checked
+  dismissCheckbox.addEventListener('change', () => {
+    if (dismissCheckbox.checked) {
+      browser.storage.local.set({ crossChatWarningDismissed: true })
+        .then(() => {
+          if (DEBUG) {
+            console.log('Cross-chat warning dismissed permanently');
+          }
+        })
+        .catch(error => {
+          console.error('Error saving cross-chat warning dismissal:', error);
+        });
+    }
+  });
+
+  // Handle Cancel button
+  cancelBtn.addEventListener('click', () => {
+    banner.remove();
+    // Don't proceed with pin use
+  });
+
+  // Handle Use Anyway button
+  useBtn.addEventListener('click', () => {
+    banner.remove();
+    // Proceed with using the pin
+    proceedWithPinUse(index, shouldDelete);
+  });
+
+  // Scroll banner into view smoothly
+  setTimeout(() => {
+    banner.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, 100);
 }
 
 // Queue a pin for later submission
@@ -1937,7 +2554,7 @@ function cancelQueue() {
  * Watches for ChatGPT to finish generating so queued pin can be submitted
  * Polls every 500ms until ChatGPT is ready or queue is cancelled
  * Automatically submits the queued pin when ChatGPT becomes available
- * 
+ *
  * @returns {void}
  */
 function watchForChatGPTReady() {
@@ -2153,8 +2770,9 @@ browser.runtime.onMessage.addListener((message) => {
   } else if (message.action === 'use-next-pin') {
     // Keyboard shortcut: Ctrl+Shift+U - use next pin
     debugLog('Prompt Pins: Use next pin shortcut triggered');
-    if (pins.length > 0) {
-      usePin(0, true);
+    const indexToUse = getNextPinIndex();
+    if (indexToUse !== -1) {
+      usePin(indexToUse, true);
     } else {
       debugLog('Prompt Pins: No pins available');
     }
@@ -2252,6 +2870,9 @@ async function initializeSidebar() {
 
       // Load and render pins
       await loadPins();
+
+      // Setup hover behavior based on current mode
+      setupHoverBehavior();
     } else {
       // Create new sidebar
       createSidebar();

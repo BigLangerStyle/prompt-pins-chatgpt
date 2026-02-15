@@ -178,6 +178,22 @@ Copyright (c) 2025 Prompt Pins Contributors
 
 ## Release Notes
 
+### Version 1.3.0 (February 6, 2026)
+
+**Major Features:**
+- **Auto-minimize sidebar** - Sidebar stays hidden until you need it, reducing screen clutter
+- **Hover-to-expand** - Quick access by hovering over collapsed edge (400ms delay)
+- **Pin/Unpin toggle** - Lock sidebar open or let it auto-hide (Windows taskbar pattern)
+- **Smart Create Pin button** - One-click pin creation from collapsed state with text detection
+- **Cross-chat warning** - Alerts when using pins from different conversations
+- **Current-chat pin prioritization** - "Next Pin →" now uses pins from your current chat first
+
+**Improvements:**
+- Three-state sidebar mode system (first-time, unpinned, pinned)
+- Smooth animations and asymmetric hover timing (fast open, patient close)
+- Collapsed sidebar shows brand icon and expand chevrons
+- Pin ordering fixed - current-chat pins always accessible first
+
 ### Version 1.2.1 (January 23, 2026)
 
 **Updates:**
