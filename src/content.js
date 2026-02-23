@@ -975,6 +975,14 @@ function autoCollapseSidebar() {
 
   if (!sidebar || !toggle || !isAutoExpanded) return;
 
+  // Check if mouse is currently hovering over sidebar - if so, let hover behavior take over
+  if (sidebar.matches(':hover')) {
+    debugLog('Prompt Pins: Mouse hovering during auto-collapse, canceling collapse and deferring to hover');
+    isAutoExpanded = false;  // Clear the flag but don't collapse
+    autoCollapseTimeout = null;
+    return;
+  }
+
   debugLog('Prompt Pins: Auto-collapsing sidebar back to original state');
 
   // Collapse the sidebar back (restore visual state without saving)
