@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.3.1] - 2026-02-23
+
+### Fixed
+- **Auto-collapse hover conflict** - Sidebar now properly detects active hover and cancels auto-collapse timer
+  - When creating a pin with a collapsed sidebar and moving the mouse over the expanded sidebar, the auto-collapse timer now checks for `:hover` state before collapsing
+  - If mouse is hovering, the `isAutoExpanded` flag is cleared but the sidebar stays open, allowing hover behavior to take over seamlessly
+  - Fixes UX issue where the sidebar would disappear despite the user hovering over it
+
+
 ## [1.3.0] - 2026-02-06
 
 ### Added

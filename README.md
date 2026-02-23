@@ -178,6 +178,11 @@ Copyright (c) 2025 Prompt Pins Contributors
 
 ## Release Notes
 
+### Version 1.3.1 (February 23, 2026)
+
+**Bug Fixes:**
+- **Auto-collapse hover conflict** - Sidebar respects hover state when auto-collapse timer fires, allowing hover behavior to take over seamlessly
+
 ### Version 1.3.0 (February 6, 2026)
 
 **Major Features:**
