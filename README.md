@@ -178,6 +178,17 @@ Copyright (c) 2025 Prompt Pins Contributors
 
 ## Release Notes
 
+### Version 1.4.0 (March 5, 2026)
+
+**New Features:**
+- **Floating pin button** - Highlight text in a ChatGPT conversation and a 📌 button appears near your selection; click to pin instantly
+
+**Improvements:**
+- **Snappier hover timing** - Sidebar hover-to-expand triggers 2x faster (200ms instead of 400ms)
+
+**Removed:**
+- Right-click context menu entry replaced by the floating pin button
+
 ### Version 1.3.1 (February 23, 2026)
 
 **Bug Fixes:**
