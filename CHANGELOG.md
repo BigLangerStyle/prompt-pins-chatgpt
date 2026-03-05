@@ -8,11 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.4.0] - 2026-03-05
 
+### Added
+- **Floating pin button on text selection** - Highlight any text in a ChatGPT conversation and a 📌 button appears near the selection; clicking it opens the pin creation form with the selected text pre-filled
+  - Button appears on `mouseup` and keyboard selection changes
+  - Excluded from inputs, textareas, contenteditable elements, and the Prompt Pins sidebar itself
+  - Hides automatically on scroll
+  - Uses `mousedown` + `preventDefault` to preserve selection when clicked
+
 ### Changed
-- **Improved hover timing** - Snappier, more polished hover-to-expand behavior
-  - Hover enter delay: 400ms → 200ms (2x faster trigger)
-  - Hover leave delay: 600ms → 400ms (1.5x faster trigger)
-  - Sidebar slide animation duration: 0.2s → 0.4s (smoother, less abrupt collapse)
+- **Improved hover timing** - Snappier sidebar hover-to-expand behavior
+  - `HOVER_ENTER_DELAY`: 400ms → 200ms (2x faster trigger)
+  - `HOVER_LEAVE_DELAY`: 600ms → 400ms (quicker collapse)
+  - CSS transition duration: `0.2s` → `0.4s` (smoother animation)
+
+### Removed
+- **Right-click context menu entry** - "Pin prompt" context menu item removed; replaced by the floating pin button which is faster and more discoverable
 
 
 ## [1.3.1] - 2026-02-23
