@@ -56,8 +56,8 @@ const TIMINGS = {
   LOGIN_CHECK_INTERVAL: 1000,          // How often to check login state (ms)
   HIGHLIGHT_ANIMATION_DURATION: 1500,  // Duration of new pin highlight animation (ms)
   AUTO_COLLAPSE_DELAY: 2000,           // Delay before auto-collapsing sidebar after pin creation (ms)
-  HOVER_ENTER_DELAY: 400,              // Delay before expanding sidebar on hover (ms)
-  HOVER_LEAVE_DELAY: 600               // Delay before collapsing sidebar after hover leave (ms)
+  HOVER_ENTER_DELAY: 200,              // Delay before expanding sidebar on hover (ms)
+  HOVER_LEAVE_DELAY: 400               // Delay before collapsing sidebar after hover leave (ms)
 };
 
 const UI_TEXT = {

@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.4.0] - 2026-03-05
+
+### Changed
+- **Improved hover timing** - Snappier, more polished hover-to-expand behavior
+  - Hover enter delay: 400ms → 200ms (2x faster trigger)
+  - Hover leave delay: 600ms → 400ms (1.5x faster trigger)
+  - Sidebar slide animation duration: 0.2s → 0.4s (smoother, less abrupt collapse)
+
+
 ## [1.3.1] - 2026-02-23
 
 ### Fixed
