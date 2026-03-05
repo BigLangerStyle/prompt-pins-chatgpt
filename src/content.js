@@ -2754,11 +2754,7 @@ function deletePin(index) {
 browser.runtime.onMessage.addListener((message) => {
   debugLog("Prompt Pins: Message received in content script:", message);
 
-  if (message.action === 'createPin') {
-    // Context menu: create pin from selected text
-    createPin(message.selectedText);
-    return Promise.resolve({success: true});
-  } else if (message.action === 'create-pin') {
+  if (message.action === 'create-pin') {
     // Keyboard shortcut: Ctrl+Shift+K - create pin from current selection
     debugLog('Prompt Pins: Create pin shortcut triggered');
     const selectedText = getSelectedText();
@@ -2899,6 +2895,147 @@ async function initializeSidebar() {
     }
   }
 }
+
+// ============================================================================
+// FLOATING SELECTION BUTTON
+// ============================================================================
+
+let _floatBtn = null;
+let _floatLastMouseX = 0;
+let _floatLastMouseY = 0;
+
+/**
+ * Returns the injected floating button element, creating it on first call.
+ */
+function getFloatingButton() {
+  if (_floatBtn) return _floatBtn;
+
+  _floatBtn = document.createElement('div');
+  _floatBtn.id = 'prompt-pins-selection-button';
+  _floatBtn.textContent = '📌';
+  _floatBtn.title = 'Pin this text';
+  _floatBtn.setAttribute('aria-label', 'Pin selected text');
+
+  // Preserve selection when button is clicked
+  _floatBtn.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+  });
+
+  _floatBtn.addEventListener('click', () => {
+    const text = window.getSelection()?.toString().trim() || '';
+    hideFloatingButton();
+    if (text) {
+      createPin(text);
+    }
+  });
+
+  document.body.appendChild(_floatBtn);
+  return _floatBtn;
+}
+
+/**
+ * Checks if a node is inside an excluded container (sidebar, input, textarea, contenteditable).
+ */
+function isInsideExcludedElement(node) {
+  let el = node instanceof Element ? node : node?.parentElement;
+  while (el) {
+    if (
+      el.id === 'prompt-pins-sidebar' ||
+      el.id === 'prompt-pins-selection-button' ||
+      el.tagName === 'INPUT' ||
+      el.tagName === 'TEXTAREA' ||
+      el.getAttribute?.('contenteditable') === 'true'
+    ) {
+      return true;
+    }
+    el = el.parentElement;
+  }
+  return false;
+}
+
+function hideFloatingButton() {
+  const btn = getFloatingButton();
+  btn.classList.remove('visible');
+}
+
+function showFloatingButton(x, y) {
+  const btn = getFloatingButton();
+  const MARGIN = 8;
+  const btnW = 34;
+  const btnH = 34;
+
+  const clampedX = Math.min(Math.max(x, MARGIN), window.innerWidth - btnW - MARGIN);
+  const clampedY = Math.min(Math.max(y, MARGIN), window.innerHeight - btnH - MARGIN);
+
+  btn.style.left = `${clampedX + window.scrollX}px`;
+  btn.style.top = `${clampedY + window.scrollY}px`;
+  btn.classList.add('visible');
+}
+
+function handleSelectionChange() {
+  const selection = window.getSelection();
+
+  if (!selection || selection.isCollapsed || !selection.toString().trim()) {
+    hideFloatingButton();
+    return;
+  }
+
+  // Check if selection anchor or focus is in an excluded element
+  if (
+    isInsideExcludedElement(selection.anchorNode) ||
+    isInsideExcludedElement(selection.focusNode)
+  ) {
+    hideFloatingButton();
+    return;
+  }
+
+  // Get bounding rect of the selection
+  let rect = null;
+  try {
+    const range = selection.getRangeAt(0);
+    rect = range.getBoundingClientRect();
+  } catch (e) {
+    // ignore
+  }
+
+  let x, y;
+  if (rect && (rect.width > 0 || rect.height > 0)) {
+    // Position near top-right of selection bounding rect
+    x = rect.right + 4;
+    y = rect.top - 38;
+    // If above viewport, show below instead
+    if (y < 8) y = rect.bottom + 4;
+  } else {
+    // Fallback to last known mouse position
+    x = _floatLastMouseX + 4;
+    y = _floatLastMouseY - 38;
+  }
+
+  showFloatingButton(x, y);
+}
+
+// Track mouse position for fallback positioning
+document.addEventListener('mousemove', (e) => {
+  _floatLastMouseX = e.clientX;
+  _floatLastMouseY = e.clientY;
+});
+
+document.addEventListener('mouseup', () => {
+  // Small delay to let selection settle
+  setTimeout(handleSelectionChange, 10);
+});
+
+document.addEventListener('keyup', (e) => {
+  // Only react to keys that can change selection
+  if (e.shiftKey || e.key === 'ArrowLeft' || e.key === 'ArrowRight' ||
+      e.key === 'ArrowUp' || e.key === 'ArrowDown' ||
+      e.key === 'Home' || e.key === 'End' || e.key === 'a') {
+    setTimeout(handleSelectionChange, 10);
+  }
+});
+
+// Hide on scroll
+document.addEventListener('scroll', hideFloatingButton, { capture: true, passive: true });
 
 // Initialize when page loads
 if (document.readyState === 'loading') {
