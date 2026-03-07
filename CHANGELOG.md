@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.4.1] - 2026-03-06
+
+### Fixed
+- **Spurious scrollbars on page load** - Floating pin button was being created and appended to `document.body` at position `0,0` immediately on first scroll event (before any text was selected), causing page overflow and triggering browser scrollbars; `hideFloatingButton()` now returns early if the button hasn't been created yet
+- **Floating pin button not appearing on first text selection** - Button now reliably appears on first highlight
+  - ChatGPT's DOM reflow on first text selection can eject injected elements from `document.body`
+  - `showFloatingButton()` now checks `btn.isConnected` and re-appends the button if it has been detached
+- **Chrome Ctrl+Shift+U shortcut not working** - `use-next-pin` command in `chrome/manifest.json` was registered as `Ctrl+Shift+J` but `content.js` displayed `Ctrl+Shift+U` in the help UI, causing the shortcut to silently fail; manifest updated to match the documented shortcut
+
+
 ## [1.4.0] - 2026-03-05
 
 ### Added

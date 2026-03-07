@@ -178,6 +178,13 @@ Copyright (c) 2025 Prompt Pins Contributors
 
 ## Release Notes
 
+### Version 1.4.1 (March 6, 2026)
+
+**Bug Fixes:**
+- **Spurious scrollbars on page load** - Fixed floating pin button being appended to `document.body` prematurely on first scroll event, causing page overflow
+- **Floating pin button first-selection fix** - Button now reliably appears on the very first text highlight
+- **Chrome Ctrl+Shift+U shortcut fix** - Manifest was registering `Ctrl+Shift+J` while the help UI showed `Ctrl+Shift+U`; shortcut now works as documented
+
 ### Version 1.4.0 (March 5, 2026)
 
 **New Features:**
