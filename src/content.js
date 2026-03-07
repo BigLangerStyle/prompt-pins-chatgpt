@@ -2954,12 +2954,19 @@ function isInsideExcludedElement(node) {
 }
 
 function hideFloatingButton() {
-  const btn = getFloatingButton();
-  btn.classList.remove('visible');
+  // Don't create the button just to hide it - if it doesn't exist yet, nothing to do
+  if (!_floatBtn) return;
+  _floatBtn.classList.remove('visible');
 }
 
 function showFloatingButton(x, y) {
   const btn = getFloatingButton();
+
+  // Re-attach if ChatGPT's DOM reflow ejected the button from the page
+  if (!btn.isConnected) {
+    document.body.appendChild(btn);
+  }
+
   const MARGIN = 8;
   const btnW = 34;
   const btnH = 34;
@@ -3021,8 +3028,30 @@ document.addEventListener('mousemove', (e) => {
 });
 
 document.addEventListener('mouseup', () => {
-  // Small delay to let selection settle
-  setTimeout(handleSelectionChange, 10);
+  // ChatGPT's own selection UI (e.g. "Ask ChatGPT" popup) can briefly clear
+  // window.getSelection() during its DOM reflow on first selection. We poll
+  // with short retries so we catch the selection once it re-settles, without
+  // introducing noticeable lag on subsequent highlights.
+  let attempts = 0;
+  const maxAttempts = 5;
+  const retryInterval = 40; // ms between retries (5 x 40ms = 200ms max wait)
+
+  function tryShowFloatingButton() {
+    const sel = window.getSelection();
+    if (sel && !sel.isCollapsed && sel.toString().trim()) {
+      // Selection is valid - show the button
+      handleSelectionChange();
+    } else if (attempts < maxAttempts) {
+      // Selection not ready yet - retry
+      attempts++;
+      setTimeout(tryShowFloatingButton, retryInterval);
+    } else {
+      // Exhausted retries with no selection - hide button
+      hideFloatingButton();
+    }
+  }
+
+  setTimeout(tryShowFloatingButton, 20);
 });
 
 document.addEventListener('keyup', (e) => {
