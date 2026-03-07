@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Floating pin button not appearing on first text selection** - Button now reliably appears on first highlight
   - ChatGPT's DOM reflow on first text selection can eject injected elements from `document.body`
   - `showFloatingButton()` now checks `btn.isConnected` and re-appends the button if it has been detached
+- **Chrome Ctrl+Shift+U shortcut not working** - `use-next-pin` command in `chrome/manifest.json` was registered as `Ctrl+Shift+J` but `content.js` displayed `Ctrl+Shift+U` in the help UI, causing the shortcut to silently fail; manifest updated to match the documented shortcut
 
 
 ## [1.4.0] - 2026-03-05
