@@ -14,7 +14,6 @@
   },
   "permissions": [
     "storage",
-    "contextMenus",
     "*://chat.openai.com/*",
     "*://chatgpt.com/*"
   ],
