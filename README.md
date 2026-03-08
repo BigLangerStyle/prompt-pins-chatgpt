@@ -178,6 +178,13 @@ Copyright (c) 2025 Prompt Pins Contributors
 
 ## Release Notes
 
+### Version 1.4.2 (March 8, 2026)
+
+**Bug Fixes:**
+- **Queued pin identity drift** - Reordering or deleting pins while another was queued could cause the wrong pin to submit; queue now tracks by stable ID instead of array index
+- **Reconnect path Next Pin fix** - After page navigation, Next Pin now correctly prioritizes current-chat pins (was using hardcoded index 0)
+- **Removed unused contextMenus permission** - Orphaned permission removed from both manifests; fixes Chrome Web Store submission rejection
+
 ### Version 1.4.1 (March 6, 2026)
 
 **Bug Fixes:**

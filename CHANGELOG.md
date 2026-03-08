@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.4.2] - 2026-03-08
+
+### Fixed
+- **Queued pin identity drift** - Queue now tracks pinned item by stable ID (`pin.id`) instead of array index (`queuedPinIndex`); previously, reordering or deleting other pins while a pin was queued could cause the wrong pin to be submitted or deleted on completion
+- **Reconnect path Next Pin prioritization** - After page navigation, the Next Pin button was calling `usePin(0, true)` with a hardcoded index; now uses `getNextPinIndex()` to match fresh load and keyboard shortcut behavior, ensuring current-chat pins are prioritized after reconnect
+- **Removed unused `contextMenus` permission** - Permission was declared in both manifests but orphaned since v1.4.0 when the right-click context menu was replaced by the floating pin button; caused Chrome Web Store rejection
+
+
 ## [1.4.1] - 2026-03-06
 
 ### Fixed
