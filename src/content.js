@@ -76,7 +76,7 @@ const UI_TEXT = {
 let pins = [];
 let sidebarOpen = true; // Default to open, will be overridden by saved state
 let sidebarMode = 'first-time'; // Three-state mode: 'first-time', 'unpinned', 'pinned'
-let queuedPinIndex = null;
+let queuedPinId = null;
 let isWatchingForSubmit = false;
 let currentHighlightTimeout = null;
 let isAutoExpanded = false; // Track if sidebar was auto-expanded for pin creation
@@ -1272,7 +1272,7 @@ function updateButtonStates() {
   const clearAllBtn = cachedElements.clearBtn;
 
   if (nextBtn) {
-    nextBtn.disabled = pins.length === 0 || queuedPinIndex !== null;
+    nextBtn.disabled = pins.length === 0 || queuedPinId !== null;
   }
 
   if (clearAllBtn) {
@@ -1312,7 +1312,7 @@ function createPinItem(pin, index, currentChatId) {
   pinItem.setAttribute('draggable', 'true');
 
   // Add queued class if this pin is queued
-  const isQueued = queuedPinIndex === index;
+  const isQueued = pin.id === queuedPinId;
   if (isQueued) {
     pinItem.classList.add('queued');
   }
@@ -1416,7 +1416,7 @@ function createPinItem(pin, index, currentChatId) {
     useBtn.title = 'Load and submit this pin';
 
     // Disable use button if another pin is queued
-    if (queuedPinIndex !== null) {
+    if (queuedPinId !== null) {
       useBtn.disabled = true;
       useBtn.style.opacity = '0.5';
       useBtn.style.cursor = 'not-allowed';
@@ -2324,7 +2324,7 @@ function usePin(index, shouldDelete = false) {
   const pin = pins[index];
 
   // If another pin is already queued, don't allow using this pin
-  if (queuedPinIndex !== null && queuedPinIndex !== index) {
+  if (queuedPinId !== null && pin.id !== queuedPinId) {
     return; // Silently ignore - button should already be disabled
   }
 
@@ -2534,8 +2534,8 @@ function queuePin(index) {
     return;
   }
 
-  queuedPinIndex = index;
   const pin = pins[index];
+  queuedPinId = pin.id;
 
   // Fill the input field
   fillInputWithPin(pin);
@@ -2549,10 +2549,8 @@ function queuePin(index) {
 
 // Cancel the queued pin
 function cancelQueue() {
-  queuedPinIndex = null;
+  queuedPinId = null;
   isWatchingForSubmit = false;
-
-  // Clear the input field
   clearChatGPTInput();
 
   renderPins();
@@ -2572,7 +2570,7 @@ function watchForChatGPTReady() {
 
   const checkInterval = setInterval(() => {
     // If queue was cancelled, stop watching
-    if (queuedPinIndex === null) {
+    if (queuedPinId === null) {
       clearInterval(checkInterval);
       isWatchingForSubmit = false;
       return;
@@ -2590,17 +2588,19 @@ function watchForChatGPTReady() {
 
 // Submit the queued pin
 function submitQueuedPin() {
-  if (queuedPinIndex === null) return;
+  if (queuedPinId === null) return;
 
   const sendButton = getSendButton();
 
   if (sendButton && !sendButton.disabled) {
     sendButton.click();
 
-    // Delete the pin after submission
-    const indexToDelete = queuedPinIndex;
-    queuedPinIndex = null;
-    deletePin(indexToDelete);
+    // Find current index of the queued pin by ID (index may have shifted)
+    const indexToDelete = pins.findIndex(p => p.id === queuedPinId);
+    queuedPinId = null;
+    if (indexToDelete !== -1) {
+      deletePin(indexToDelete);
+    }
   }
 }
 
