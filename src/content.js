@@ -2866,8 +2866,9 @@ async function initializeSidebar() {
       }
       if (cachedElements.nextBtn) {
         cachedElements.nextBtn.addEventListener('click', () => {
-          if (pins.length > 0) {
-            usePin(0, true);
+          const indexToUse = getNextPinIndex();
+          if (indexToUse !== -1) {
+            usePin(indexToUse, true);
           }
         });
       }
