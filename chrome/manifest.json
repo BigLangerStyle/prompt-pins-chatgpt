@@ -1,11 +1,10 @@
 {
   "manifest_version": 3,
   "name": "Prompt Pins for ChatGPT",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "Save questions for later without breaking conversational flow. All data stored locally - nothing leaves your browser.",
   "permissions": [
-    "storage",
-    "contextMenus"
+    "storage"
   ],
   "host_permissions": [
     "*://chat.openai.com/*",
