@@ -39,8 +39,8 @@ const SELECTORS = {
   SEND_BUTTON: 'button[data-testid="send-button"]',
   SEND_BUTTON_ALT: 'button[aria-label="Send prompt"]',
   SEND_BUTTON_ICON: 'button svg[class*="icon-send"]',
-  STOP_BUTTON: 'button[aria-label*="Stop"]',
-  STOP_BUTTON_ALT: 'button[aria-label*="stop"]',
+  STOP_BUTTON: 'button[data-testid="stop-button"]',
+  STOP_BUTTON_ALT: 'button[aria-label="Stop streaming"]',
   ACTIVE_CHAT: '[aria-current="page"]',
   CHAT_LINKS: 'a[href*="/c/"]',
   STREAMING_INDICATOR: '[data-testid="streaming-indicator"]',
@@ -134,8 +134,14 @@ function moveCursorToEnd(element) {
 }
 
 // Trigger ChatGPT's input events
+// Uses InputEvent with inputType:'insertText' so React's synthetic event
+// system recognises the programmatic insertion and enables the send button.
+// Falls back to a plain Event for browsers that don't support InputEvent.
 function triggerInputEvents(element) {
-  element.dispatchEvent(new Event('input', { bubbles: true }));
+  const inputEvent = (typeof InputEvent !== 'undefined')
+    ? new InputEvent('input', { bubbles: true, cancelable: true, inputType: 'insertText' })
+    : new Event('input', { bubbles: true });
+  element.dispatchEvent(inputEvent);
   element.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
@@ -203,26 +209,23 @@ function getCurrentChatTitle() {
  * Checks if ChatGPT is currently generating a response
  * Uses multiple detection methods:
  * 1. Presence of "Stop generating" button
- * 2. Disabled state of send button
- * 3. Streaming indicator elements
+ * 2. Streaming indicator elements
+ *
+ * NOTE: Send button disabled state (formerly Method 2) was removed because
+ * ChatGPT disables the send button whenever the textarea is empty, regardless
+ * of generation state. An idle ChatGPT with an empty input would cause a false
+ * positive and leave the queue stuck indefinitely.
  *
  * @returns {boolean} True if ChatGPT is generating, false otherwise
  */
 function isChatGPTGenerating() {
   // Method 1: Look for "Stop generating" button
   const stopButton = document.querySelector(SELECTORS.STOP_BUTTON)
-    || document.querySelector(SELECTORS.STOP_BUTTON_ALT)
-    || Array.from(document.querySelectorAll('button')).find(btn =>
-      btn.textContent.toLowerCase().includes('stop generating')
-    );
+    || document.querySelector(SELECTORS.STOP_BUTTON_ALT);
 
   if (stopButton) return true;
 
-  // Method 2: Check if send button is disabled
-  const sendButton = getSendButton();
-  if (sendButton && sendButton.disabled) return true;
-
-  // Method 3: Look for streaming indicator elements
+  // Method 2: Look for streaming indicator elements
   const streamingIndicator = document.querySelector(SELECTORS.STREAMING_INDICATOR)
     || document.querySelector(SELECTORS.STREAMING_INDICATOR_ALT);
 

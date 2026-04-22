@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.4.3] - 2026-04-22
+
+### Fixed
+- **Pins not sending / queue stuck in "waiting" state** - `isChatGPTGenerating()` used overly broad stop button selectors (`aria-label*="Stop"`, `aria-label*="stop"`) that matched any button whose label contained "Stop" — including chat history sidebar items (e.g. a conversation titled "Stop chkdsk safely"). This caused `isChatGPTGenerating()` to always return `true`, routing every pin use through the queue path and never submitting. Fixed by replacing with precise selectors (`data-testid="stop-button"`, `aria-label="Stop streaming"`) that match only the actual stop-generation control. Also removed the unreliable send button disabled check (ChatGPT disables the send button on empty input regardless of generation state) and the broad `textContent.includes('stop generating')` fallback
+
+
 ## [1.4.2] - 2026-03-08
 
 ### Fixed
