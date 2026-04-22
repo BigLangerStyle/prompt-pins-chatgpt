@@ -178,6 +178,11 @@ Copyright (c) 2025 Prompt Pins Contributors
 
 ## Release Notes
 
+### Version 1.4.3 (April 22, 2026)
+
+**Bug Fixes:**
+- **Queue stuck in "waiting" state** - Fixed `isChatGPTGenerating()` incorrectly returning `true` when ChatGPT was idle. Overly broad stop-button selectors (`aria-label*="Stop"`) matched unrelated page elements — including chat history sidebar items — causing all pin uses to queue indefinitely. Updated to precise selectors (`data-testid="stop-button"`, `aria-label="Stop streaming"`) and removed the unreliable send-button disabled check (ChatGPT disables the send button on empty input regardless of generation state)
+
 ### Version 1.4.2 (March 8, 2026)
 
 **Bug Fixes:**
