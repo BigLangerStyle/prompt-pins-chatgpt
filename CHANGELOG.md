@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+
+## [1.4.4] - 2026-04-26
+
+### Changed
+- **Version bump** - Bumped version from 1.4.3 to 1.4.4 to resolve Chrome Web Store submission conflict (v1.4.3 was already in-system and could not be resubmitted)
+- **Package description** - Simplified description in `package.json` and `firefox/manifest.json`
+
+### Note
+This release contains the same code changes as v1.4.3 (queue stuck bug fix). The version number was incremented because v1.4.3 was already submitted to Chrome Web Store and could not be resubmitted.
+
 ## [1.4.3] - 2026-04-22
 
 ### Fixed
