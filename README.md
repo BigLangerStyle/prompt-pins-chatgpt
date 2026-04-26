@@ -178,6 +178,13 @@ Copyright (c) 2025 Prompt Pins Contributors
 
 ## Release Notes
 
+### Version 1.4.4 (April 26, 2026)
+
+**Administrative Release:**
+- Version bumped from 1.4.3 to 1.4.4 (Chrome Web Store submission conflict — v1.4.3 already in-system)
+- Simplified package description in `package.json` and `firefox/manifest.json`
+- Same code changes as v1.4.3 (queue stuck bug fix)
+
 ### Version 1.4.3 (April 22, 2026)
 
 **Bug Fixes:**
